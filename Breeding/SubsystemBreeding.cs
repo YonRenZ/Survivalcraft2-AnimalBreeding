@@ -15,14 +15,10 @@ namespace Game
     /// 2. 怀孕成功率：三选一失败检测(血量/温湿度/密度)，否则按 DefaultPregnancySuccessRate 判定。
     /// 3. 成长阶段：幼崽期(CubDurationDays 天) → 成年期；幼崽期每天有夭折判定。
     /// 4. 攻击力动态调整：幼崽 ×0.3 / 成年 ×1.0；发情期 ×0.5；残血 ×0.5；分状态直接乘算。
-    /// 5. 近亲与重复配对：只追溯父母双方 ID；记录最近 N 次成功交配对象。
     ///
-    /// 优化点(相对原方案)：
-    /// · 怀孕检测与近亲检测做了节流(每 N 秒一次)，避免每帧扫描全图。
-    /// · 温/湿度查询使用 Terrain.GetSeasonalTemperature/GetSeasonalHumidity 一次取值，归一化后比对。
-    /// · 密度检测复用 SubsystemBodies 的空间分桶(FindBodiesAroundPoint)，O(范围) 而非 O(全图)。
-    /// · 新增怀孕冷却(PregnancyCooldownDays)，防止单只母兽被刷爆。
-    /// · 新增怀孕持续时间(GestationDays，默认 1 天)，避免母体瞬间分娩。
+    /// 简化点(已移除)：
+    /// · 近亲检测：已移除(原 IsInbreeding 逻辑)。
+    /// · 重复配对检测：已移除(原 RecentMates / IsRecentMate 逻辑)。
     /// </summary>
     public static class SubsystemBreeding
     {
@@ -51,12 +47,6 @@ namespace Game
         static Random s_random = new();
         static bool s_initialized;
 
-        /// <summary>渲染器是否已注册(由 BreedingModLoader.OnProjectLoaded 设置)。仅用于调试日志节流。</summary>
-        public static bool RendererRegistered;
-
-        /// <summary>渲染心跳节流计数器(每 300 帧输出一次)。</summary>
-        static long s_debugFrameCounter;
-
         /// <summary>攻击力修正命中节流计数器(每 200 次命中输出一次)。</summary>
         static long s_debugHitCounter;
 
@@ -72,7 +62,7 @@ namespace Game
         /// </summary>
         public static void Initialize(Project project)
         {
-            Log.Information("[Breeding] Initialize 开始");
+            Log.Information("[HYKJ.Breeding] Initialize 开始");
             s_project = project;
             s_creatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(true);
             s_bodies = project.FindSubsystem<SubsystemBodies>(true);
@@ -81,7 +71,7 @@ namespace Game
             s_timeOfDay = project.FindSubsystem<SubsystemTimeOfDay>(true);
             s_gameInfo = project.FindSubsystem<SubsystemGameInfo>(true);
             s_time = project.FindSubsystem<SubsystemTime>(true);
-            Log.Information($"[Breeding] 子系统已缓存: creatureSpawn={s_creatureSpawn!=null}, bodies={s_bodies!=null}, seasons={s_seasons!=null}, terrain={s_terrain!=null}, timeOfDay={s_timeOfDay!=null}, time={s_time!=null}");
+            Log.Information($"[HYKJ.Breeding] 子系统已缓存: creatureSpawn={s_creatureSpawn!=null}, bodies={s_bodies!=null}, seasons={s_seasons!=null}, terrain={s_terrain!=null}, timeOfDay={s_timeOfDay!=null}, time={s_time!=null}");
 
             // 加载配置(若已加载则刷新)。同时把 NestBlocks 字符串解析为方块索引。
             BreedingConfig.Load();
@@ -102,23 +92,23 @@ namespace Game
                             if (idx > 0)
                             {
                                 kv.Value.NestBlockIndices.Add(idx);
-                                Log.Information($"[Breeding]   物种 {kv.Key} 巢穴方块 {blockName} → 索引 {idx}");
+                                Log.Information($"[HYKJ.Breeding]   物种 {kv.Key} 巢穴方块 {blockName} → 索引 {idx}");
                             }
                             else
                             {
-                                Log.Warning($"[Breeding]   物种 {kv.Key} 巢穴方块 {blockName} 未找到");
+                                Log.Warning($"[HYKJ.Breeding]   物种 {kv.Key} 巢穴方块 {blockName} 未找到");
                             }
                         }
                     }
                 }
-                Log.Information($"[Breeding] 初始化完成，追踪物种数={cfg.Species.Count}，GestationDays={kGestationDays}，BreedingCheckInterval={kBreedingCheckIntervalSeconds}s");
+                Log.Information($"[HYKJ.Breeding] 初始化完成，追踪物种数={cfg.Species.Count}，GestationDays={kGestationDays}，BreedingCheckInterval={kBreedingCheckIntervalSeconds}s");
             }
             else
             {
-                Log.Warning("[Breeding] 配置禁用或加载失败，繁殖系统不生效");
+                Log.Warning("[HYKJ.Breeding] 配置禁用或加载失败，繁殖系统不生效");
             }
             s_initialized = true;
-            Log.Information("[Breeding] Initialize 完成");
+            Log.Information("[HYKJ.Breeding] Initialize 完成");
         }
 
         /// <summary>按方块显示名查找方块索引。用于 NestBlocks 配置项。找不到返回 -1。</summary>
@@ -139,7 +129,7 @@ namespace Game
             }
             catch (Exception e)
             {
-                Log.Warning($"[Breeding] 查找方块 {blockName} 失败: {e.Message}");
+                Log.Warning($"[HYKJ.Breeding] 查找方块 {blockName} 失败: {e.Message}");
             }
             return -1;
         }
@@ -167,7 +157,7 @@ namespace Game
 
             if (s_states.ContainsKey(entity))
             {
-                Log.Information($"[Breeding] OnEntityAdd 已存在状态: id={entity.Id}, template={templateName}");
+                Log.Information($"[HYKJ.Breeding] OnEntityAdd 已存在状态: id={entity.Id}, template={templateName}");
                 return;
             }
 
@@ -185,7 +175,7 @@ namespace Game
             s_states[entity] = state;
             s_idToEntity[entity.Id] = entity;
 
-            Log.Information($"[Breeding] OnEntityAdd 注册新个体: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, day={s_timeOfDay.Day}, totalTracked={s_states.Count}");
+            Log.Information($"[HYKJ.Breeding] OnEntityAdd 注册新个体: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, day={s_timeOfDay.Day}, totalTracked={s_states.Count}");
         }
 
         /// <summary>由 HYKJModLoader.OnEntityRemove 调用。清理状态。</summary>
@@ -199,7 +189,7 @@ namespace Game
             s_idToEntity.Remove(entity.Id);
             if (removed)
             {
-                Log.Information($"[Breeding] OnEntityRemove 清理: id={entity.Id}, totalTracked={s_states.Count}");
+                Log.Information($"[HYKJ.Breeding] OnEntityRemove 清理: id={entity.Id}, totalTracked={s_states.Count}");
             }
         }
 
@@ -217,7 +207,7 @@ namespace Game
             if (state == null)
             {
                 // 没有保存的状态(老存档/未保存过)，让 OnEntityAdd 走默认初始化
-                Log.Information($"[Breeding] OnReadSpawnData 无保存状态(走默认初始化): id={entity.Id}, template={templateName}");
+                Log.Information($"[HYKJ.Breeding] OnReadSpawnData 无保存状态(走默认初始化): id={entity.Id}, template={templateName}");
 
                 return;
             }
@@ -225,7 +215,7 @@ namespace Game
             if (!string.Equals(state.TemplateName, templateName, StringComparison.Ordinal))
             {
 
-                Log.Warning($"[Breeding] 状态模板名不匹配: state={state.TemplateName}, entity={templateName}，丢弃旧状态");
+                Log.Warning($"[HYKJ.Breeding] 状态模板名不匹配: state={state.TemplateName}, entity={templateName}，丢弃旧状态");
                 return;
             }
             // 已经在 s_states 中的话(OnEntityAdd 先跑了)，覆盖
@@ -238,7 +228,7 @@ namespace Game
                 ApplyCubBoxSize(entity, cfg.GetSpecies(templateName));
             }
 
-            Log.Information($"[Breeding] OnReadSpawnData 恢复状态: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, birthDay={state.BirthDay}, dueDay={state.PregnancyDueDay}");
+            Log.Information($"[HYKJ.Breeding] OnReadSpawnData 恢复状态: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, birthDay={state.BirthDay}, dueDay={state.PregnancyDueDay}");
         }
 
         /// <summary>由 HYKJModLoader.OnSaveSpawnData 调用。把繁殖状态序列化进 SpawnEntityData.Data。</summary>
@@ -416,29 +406,11 @@ namespace Game
             // 6. 三选一失败检测 + 概率判定
             if (!CheckPregnancySuccess(entity, state, species, cfg, mate)) return;
 
-            // 7. 近亲检测(只追溯父母双方 ID)
-            if (cfg.InbreedingEnabled && IsInbreeding(state, mate))
-            {
-                Log.Information("[Breeding] 交配失败(近亲)");
-                return;
-            }
-
-            // 8. 重复配对检测
-            if (state.IsRecentMate(mate.Id))
-            {
-                Log.Information("[Breeding] 交配失败(它们腻了)");
-                return;
-            }
-
-            // 9. 交配成功：开始怀孕
-            BreedingState mateState = s_states.TryGetValue(mate, out BreedingState ms) ? ms : null;
+            // 7. 交配成功：开始怀孕(已移除近亲检测与重复配对检测)
             state.PregnancyDueDay = currentDay + kGestationDays;
             state.PregnancyFatherId = mate.Id;
             state.PregnancyFatherTemplate = mate.ValuesDictionary.DatabaseObject?.Name;
-            state.RecordMate(mate.Id, cfg.RecentMatesLimit);
-            // 双向记录(公体也记一下)
-            mateState?.RecordMate(entity.Id, cfg.RecentMatesLimit);
-            Log.Information($"[Breeding] 交配成功: mother={state.TemplateName}#{entity.Id}, father={mateState?.TemplateName}#{mate.Id}, dueDay={state.PregnancyDueDay}");
+            Log.Information($"[Breeding] 交配成功: mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, dueDay={state.PregnancyDueDay}");
         }
 
         /// <summary>查找附近同物种成年公体。半径用 DensityRadius。</summary>
@@ -534,21 +506,6 @@ namespace Game
             return count;
         }
 
-        /// <summary>
-        /// 近亲检测：只追溯父母双方 ID。如果两者有共同的父母(亲兄妹/父女) → 返回 true。
-        /// 不做多代族谱追溯。
-        /// </summary>
-        static bool IsInbreeding(BreedingState mother, Entity fatherEntity)
-        {
-            if (!s_states.TryGetValue(fatherEntity, out BreedingState father)) return false;
-            // 共同父母：母亲的父/母 ID 与父亲的父/母 ID 有任一相同且非 0
-            int mF = mother.FatherId, mM = mother.MotherId;
-            int fF = father.FatherId, fM = father.MotherId;
-            if (mF != 0 && (mF == fF || mF == fM)) return true;
-            if (mM != 0 && (mM == fF || mM == fM)) return true;
-            return false;
-        }
-
         // ==================== 分娩 ====================
 
         /// <summary>
@@ -592,7 +549,6 @@ namespace Game
                 cubState.Gender = s_random.Bool(0.5f) ? BreedingGender.Male : BreedingGender.Female;
                 cubState.LastBirthDay = -1.0;
                 cubState.PregnancyDueDay = -1.0;
-                cubState.RecentMates.Clear();
                 cubState.LastCubSurvivalDay = (long)Math.Floor(s_timeOfDay.Day);
 
                 // 应用幼崽碰撞盒
@@ -771,57 +727,10 @@ namespace Game
             return s_timeOfDay != null ? s_timeOfDay.Day : 0.0;
         }
 
-        /// <summary>
-        /// 枚举所有被追踪的动物与其繁殖状态(渲染器遍历用)。
-        /// 返回内部 Dictionary 的快照副本，避免渲染过程中集合被修改导致 InvalidOperationException。
-        /// </summary>
-        public static List<KeyValuePair<Entity, BreedingState>> GetAllTracked()
-        {
-            // ToList 触发一次浅拷贝；Entity 与 BreedingState 均为引用类型，渲染期间状态字段读取安全。
-            // 若状态被并发修改(例如 OnEntityRemove)，最多读到旧值，不会抛迭代异常。
-            lock (s_states)
-            {
-                return new List<KeyValuePair<Entity, BreedingState>>(s_states);
-            }
-        }
-
-        /// <summary>
-        /// 直接遍历所有被追踪的动物(渲染器用，避免每帧 ToList 分配 GC 压力)。
-        /// 在锁内逐个回调，回调中禁止修改 s_states(否则抛 InvalidOperationException)。
-        /// 回调异常由调用方处理(本方法不吞异常)。
-        /// </summary>
-        public static void ForEachTracked(Action<Entity, BreedingState> callback)
-        {
-            if (callback == null) return;
-            // 锁内遍历：渲染线程与 OnEntityAdd/Remove 互斥，保证遍历期间集合不被修改。
-            // 注意：回调内不要做耗时操作(否则会阻塞实体添加/移除)。
-            lock (s_states)
-            {
-                foreach (KeyValuePair<Entity, BreedingState> kv in s_states)
-                {
-                    callback(kv.Key, kv.Value);
-                }
-            }
-        }
-
-        /// <summary>查询某实体的繁殖状态(调试/外部展示用)。无则返回 null。</summary>
+        /// <summary>查询某实体的繁殖状态(渲染钩子 OnModelRendererDrawExtra 用)。无则返回 null。</summary>
         public static BreedingState GetState(Entity entity)
         {
             return entity != null && s_states.TryGetValue(entity, out BreedingState s) ? s : null;
-        }
-
-        /// <summary>
-        /// 渲染器每帧调用一次的轻量调试日志(每 300 帧输出一行，避免刷屏)。
-        /// 仅在调用方传入 drawn > 0 时才推进计数器。
-        /// </summary>
-        public static void LogRenderTick(int drawn)
-        {
-            if (drawn <= 0) return;
-            long c = System.Threading.Interlocked.Increment(ref s_debugFrameCounter);
-            if (c % 300 == 0)
-            {
-                Log.Information($"[Breeding] 渲染心跳: drawnThisFrame={drawn}, totalTracked={s_states.Count}, day={s_timeOfDay?.Day ?? 0}");
-            }
         }
     }
 }

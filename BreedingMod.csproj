@@ -8,10 +8,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="BreedingModLoader.cs" />
-    <Compile Update="Breeding/BreedingConfig.cs" />
-    <Compile Update="Breeding/BreedingState.cs" />
-    <Compile Update="Breeding/SubsystemBreeding.cs" />
-    <Compile Update="Breeding/SubsystemBreedingRenderer.cs" />
+    <Compile Include="Breeding/BreedingConfig.cs" />
+    <Compile Include="Breeding/BreedingState.cs" />
+    <Compile Include="Breeding/SubsystemBreeding.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Engine" HintPath="Quoted/Engine.dll" />
