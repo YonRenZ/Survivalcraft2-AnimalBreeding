@@ -4,7 +4,6 @@ using Engine.Graphics;
 using Engine.Media;
 using GameEntitySystem;
 using Game;
-using HYKJ.Breeding;
 
 namespace Game
 {

@@ -62,7 +62,7 @@ namespace Game
         /// </summary>
         public static void Initialize(Project project)
         {
-            Log.Information("[HYKJ.Breeding] Initialize 开始");
+            Log.Information("[Breeding] Initialize 开始");
             s_project = project;
             s_creatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(true);
             s_bodies = project.FindSubsystem<SubsystemBodies>(true);
@@ -71,7 +71,7 @@ namespace Game
             s_timeOfDay = project.FindSubsystem<SubsystemTimeOfDay>(true);
             s_gameInfo = project.FindSubsystem<SubsystemGameInfo>(true);
             s_time = project.FindSubsystem<SubsystemTime>(true);
-            Log.Information($"[HYKJ.Breeding] 子系统已缓存: creatureSpawn={s_creatureSpawn!=null}, bodies={s_bodies!=null}, seasons={s_seasons!=null}, terrain={s_terrain!=null}, timeOfDay={s_timeOfDay!=null}, time={s_time!=null}");
+            Log.Information($"[Breeding] 子系统已缓存: creatureSpawn={s_creatureSpawn!=null}, bodies={s_bodies!=null}, seasons={s_seasons!=null}, terrain={s_terrain!=null}, timeOfDay={s_timeOfDay!=null}, time={s_time!=null}");
 
             // 加载配置(若已加载则刷新)。同时把 NestBlocks 字符串解析为方块索引。
             BreedingConfig.Load();
@@ -92,23 +92,23 @@ namespace Game
                             if (idx > 0)
                             {
                                 kv.Value.NestBlockIndices.Add(idx);
-                                Log.Information($"[HYKJ.Breeding]   物种 {kv.Key} 巢穴方块 {blockName} → 索引 {idx}");
+                                Log.Information($"[Breeding]   物种 {kv.Key} 巢穴方块 {blockName} → 索引 {idx}");
                             }
                             else
                             {
-                                Log.Warning($"[HYKJ.Breeding]   物种 {kv.Key} 巢穴方块 {blockName} 未找到");
+                                Log.Warning($"[Breeding]   物种 {kv.Key} 巢穴方块 {blockName} 未找到");
                             }
                         }
                     }
                 }
-                Log.Information($"[HYKJ.Breeding] 初始化完成，追踪物种数={cfg.Species.Count}，GestationDays={kGestationDays}，BreedingCheckInterval={kBreedingCheckIntervalSeconds}s");
+                Log.Information($"[Breeding] 初始化完成，追踪物种数={cfg.Species.Count}，GestationDays={kGestationDays}，BreedingCheckInterval={kBreedingCheckIntervalSeconds}s");
             }
             else
             {
-                Log.Warning("[HYKJ.Breeding] 配置禁用或加载失败，繁殖系统不生效");
+                Log.Warning("[Breeding] 配置禁用或加载失败，繁殖系统不生效");
             }
             s_initialized = true;
-            Log.Information("[HYKJ.Breeding] Initialize 完成");
+            Log.Information("[Breeding] Initialize 完成");
         }
 
         /// <summary>按方块显示名查找方块索引。用于 NestBlocks 配置项。找不到返回 -1。</summary>
@@ -129,7 +129,7 @@ namespace Game
             }
             catch (Exception e)
             {
-                Log.Warning($"[HYKJ.Breeding] 查找方块 {blockName} 失败: {e.Message}");
+                Log.Warning($"[Breeding] 查找方块 {blockName} 失败: {e.Message}");
             }
             return -1;
         }
@@ -157,7 +157,7 @@ namespace Game
 
             if (s_states.ContainsKey(entity))
             {
-                Log.Information($"[HYKJ.Breeding] OnEntityAdd 已存在状态: id={entity.Id}, template={templateName}");
+                Log.Information($"[Breeding] OnEntityAdd 已存在状态: id={entity.Id}, template={templateName}");
                 return;
             }
 
@@ -175,7 +175,7 @@ namespace Game
             s_states[entity] = state;
             s_idToEntity[entity.Id] = entity;
 
-            Log.Information($"[HYKJ.Breeding] OnEntityAdd 注册新个体: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, day={s_timeOfDay.Day}, totalTracked={s_states.Count}");
+            Log.Information($"[Breeding] OnEntityAdd 注册新个体: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, day={s_timeOfDay.Day}, totalTracked={s_states.Count}");
         }
 
         /// <summary>由 HYKJModLoader.OnEntityRemove 调用。清理状态。</summary>
@@ -189,7 +189,7 @@ namespace Game
             s_idToEntity.Remove(entity.Id);
             if (removed)
             {
-                Log.Information($"[HYKJ.Breeding] OnEntityRemove 清理: id={entity.Id}, totalTracked={s_states.Count}");
+                Log.Information($"[Breeding] OnEntityRemove 清理: id={entity.Id}, totalTracked={s_states.Count}");
             }
         }
 
@@ -207,7 +207,7 @@ namespace Game
             if (state == null)
             {
                 // 没有保存的状态(老存档/未保存过)，让 OnEntityAdd 走默认初始化
-                Log.Information($"[HYKJ.Breeding] OnReadSpawnData 无保存状态(走默认初始化): id={entity.Id}, template={templateName}");
+                Log.Information($"[Breeding] OnReadSpawnData 无保存状态(走默认初始化): id={entity.Id}, template={templateName}");
 
                 return;
             }
@@ -215,7 +215,7 @@ namespace Game
             if (!string.Equals(state.TemplateName, templateName, StringComparison.Ordinal))
             {
 
-                Log.Warning($"[HYKJ.Breeding] 状态模板名不匹配: state={state.TemplateName}, entity={templateName}，丢弃旧状态");
+                Log.Warning($"[Breeding] 状态模板名不匹配: state={state.TemplateName}, entity={templateName}，丢弃旧状态");
                 return;
             }
             // 已经在 s_states 中的话(OnEntityAdd 先跑了)，覆盖
@@ -228,7 +228,7 @@ namespace Game
                 ApplyCubBoxSize(entity, cfg.GetSpecies(templateName));
             }
 
-            Log.Information($"[HYKJ.Breeding] OnReadSpawnData 恢复状态: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, birthDay={state.BirthDay}, dueDay={state.PregnancyDueDay}");
+            Log.Information($"[Breeding] OnReadSpawnData 恢复状态: id={entity.Id}, template={templateName}, gender={state.GetGenderDisplayName()}, stage={state.GetStageDisplayName()}, birthDay={state.BirthDay}, dueDay={state.PregnancyDueDay}");
         }
 
         /// <summary>由 HYKJModLoader.OnSaveSpawnData 调用。把繁殖状态序列化进 SpawnEntityData.Data。</summary>
@@ -609,7 +609,7 @@ namespace Game
             // 节流日志：每 200 次命中输出一次攻击力修正详情
             if (s_debugHitCounter++ % 200 == 0)
             {
-                Log.Information($"[HYKJ.Breeding] OnMinerHit 攻击力修正: id={attacker.Id}, template={state.TemplateName}, stage={state.GetStageDisplayName()}, estrus={state.IsInEstrus}, factor=stage×{stageFactor}*estrus×{estrusFactor}*lowHp×{lowHealthFactor}={stageFactor * estrusFactor * lowHealthFactor}");
+                Log.Information($"[Breeding] OnMinerHit 攻击力修正: id={attacker.Id}, template={state.TemplateName}, stage={state.GetStageDisplayName()}, estrus={state.IsInEstrus}, factor=stage×{stageFactor}*estrus×{estrusFactor}*lowHp×{lowHealthFactor}={stageFactor * estrusFactor * lowHealthFactor}");
             }
         }
 
@@ -634,7 +634,7 @@ namespace Game
                 {
                     list.Add(new ComponentLevel.Factor
                     {
-                        Name = "HYKJ.Breeding.Estrus",
+                        Name = "Breeding.Estrus",
                         Value = cfg.EstrusChaseRangeMultiplier,
                         FactorAdditionType = FactorAdditionType.Multiply,
                         Description = "发情期仇恨范围 ×2"
