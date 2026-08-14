@@ -267,75 +267,7 @@
 
 ---
 
-## 七、常见调参场景
-
-### 1. 加快灰狼测试速度
-
-```json
-{
-  "Enabled": true,
-  "Species": {
-    "Wolf_Gray": {
-      "BreedingSeasons": [ "Winter", "Spring", "Summer", "Autumn" ],
-      "CubDurationDays": 0.5,
-      "GestationSeconds": 10.0,
-      "MatingRequiredProximitySeconds": 3.0,
-      "WeaknessSeconds": 15.0
-    }
-  }
-}
-```
-
-### 2. 让公狼更强势
-
-```json
-{
-  "Enabled": true,
-  "Species": {
-    "Wolf_Gray": {
-      "MaleAttackBonus": 1.8,
-      "AdultMaleBoxScale": 1.5,
-      "RivalChaseTime": 60.0
-    }
-  }
-}
-```
-
-### 3. 让狼群更温顺
-
-```json
-{
-  "Enabled": true,
-  "Species": {
-    "Wolf_Gray": {
-      "EstrusChaseRangeMultiplier": 1.0,
-      "CubAttackFactor": 0.1,
-      "AdultAttackFactor": 0.7
-    }
-  }
-}
-```
-
-### 4. 加快马的测试速度
-
-让所有马变种全年发情、快速繁殖，方便观察马驹成长：
-
-```json
-{
-  "Enabled": true,
-  "Species": {
-    "Horse_Black":   { "BreedingSeasons": [ "Spring", "Summer", "Autumn", "Winter" ], "CubDurationDays": 0.5, "GestationSeconds": 15.0, "MatingRequiredProximitySeconds": 3.0, "WeaknessSeconds": 15.0 },
-    "Horse_Bay":     { "BreedingSeasons": [ "Spring", "Summer", "Autumn", "Winter" ], "CubDurationDays": 0.5, "GestationSeconds": 15.0, "MatingRequiredProximitySeconds": 3.0, "WeaknessSeconds": 15.0 },
-    "Horse_Chestnut":{ "BreedingSeasons": [ "Spring", "Summer", "Autumn", "Winter" ], "CubDurationDays": 0.5, "GestationSeconds": 15.0, "MatingRequiredProximitySeconds": 3.0, "WeaknessSeconds": 15.0 },
-    "Horse_Palomino":{ "BreedingSeasons": [ "Spring", "Summer", "Autumn", "Winter" ], "CubDurationDays": 0.5, "GestationSeconds": 15.0, "MatingRequiredProximitySeconds": 3.0, "WeaknessSeconds": 15.0 },
-    "Horse_White":   { "BreedingSeasons": [ "Spring", "Summer", "Autumn", "Winter" ], "CubDurationDays": 0.5, "GestationSeconds": 15.0, "MatingRequiredProximitySeconds": 3.0, "WeaknessSeconds": 15.0 }
-  }
-}
-```
-
----
-
-## 八、配置加载机制
+## 七、配置加载机制
 
 - **加载时机**：`OnProjectLoaded` 钩子中调用 `BreedingConfig.Load()`，即世界加载完成时。
 - **加载方式（多源合并）**：
@@ -353,7 +285,7 @@
 
 ---
 
-## 九、第三方模组接入（多源配置）
+## 八、第三方模组接入（多源配置）
 
 本模组支持**多源配置合并**：其他模组可以自带一份繁殖配置文件，无需修改本模组代码、无需手动合并配置。
 
@@ -447,7 +379,7 @@
 
 ---
 
-## 十、参数与代码对应关系
+## 九、参数与代码对应关系
 
 | 配置参数 | 代码位置 | 用途 |
 |---------|---------|------|
