@@ -5,26 +5,68 @@
   "Enabled": true,
   "Species": {
     "Wolf_Gray": {
+      "_模板说明": "灰狼：小型掠食者，无需喂食，冬季自动发情。本物种是带完整参数注释的参考模板，供第三方模组开发者复制参考。所有 _ 开头的字段仅为说明，游戏会忽略。1 游戏天 = 1200 现实秒。",
+
       "BreedingSeasons": [ "Winter" ],
+      "_BreedingSeasons": "繁殖季节列表，可填多个。可选: Summer / Autumn / Winter / Spring。灰狼只在冬季发情。",
+
       "CubDurationDays": 4.5,
+      "_CubDurationDays": "幼崽期/成长期持续天数(游戏天)。到期后进阶成年。规则: 成长期=孕期×3，灰狼(小型)=4.5天。",
+
       "GestationSeconds": 1800.0,
+      "_GestationSeconds": "孕期持续秒数(现实秒)。母体交配成功后此秒数分娩。规则: 大型动物2天(2400秒)、小型动物1.5天(1800秒)，灰狼为小型。",
+
       "MatingRequiredProximitySeconds": 10.0,
+      "_MatingRequiredProximitySeconds": "交配所需相处时间(现实秒)。公母在 MateRadius 内持续相处满此秒数后触发交配。",
+
       "WeaknessSeconds": 900.0,
+      "_WeaknessSeconds": "虚弱期持续秒数(现实秒)。交配后公体虚弱、分娩后母体虚弱，虚弱期间不发情。规则: 虚弱=孕期÷2，灰狼=900秒(0.75游戏天)。",
+
       "RivalChaseTime": 30.0,
+      "_RivalChaseTime": "公体竞争时追击竞争对手的时长(现实秒)。多公追同一母体时互相攻击。",
+
       "MateRadius": 2.0,
+      "_MateRadius": "交配判定半径(方块)。公母在此距离内持续相处才算交配。",
+
       "SeekRadius": 20.0,
+      "_SeekRadius": "公体寻找母体的搜索半径(方块)。发情公体在此范围内寻找母体并主动走过去。",
+
       "BirthSpawnOffset": 1.5,
+      "_BirthSpawnOffset": "分娩时幼崽在母体附近的随机偏移范围(方块)。",
+
       "CubAttackFactor": 0.3,
+      "_CubAttackFactor": "幼崽攻击力系数(与成年基准相乘)。灰狼幼崽攻击力=1.0×0.3=0.3×。",
+
       "AdultAttackFactor": 1.0,
+      "_AdultAttackFactor": "成年攻击力系数(基准1.0)。最终攻击力=基础攻击力×阶段系数×性别系数。",
+
       "MaleAttackBonus": 1.3,
+      "_MaleAttackBonus": "公体攻击力额外倍率(母体为1.0)。灰狼公=1.0×1.3=1.3×，母=1.0×1.0=1.0×。",
+
       "CubBoxScale": 0.5,
+      "_CubBoxScale": "幼崽出生时的体型缩放(相对原版模板 BoxSize/ModelScale)。成长度0→1期间线性增长到成年尺寸。",
+
       "AdultMaleBoxScale": 1.3,
+      "_AdultMaleBoxScale": "成年公体体型缩放(相对原版)。公狼比母狼大。",
+
       "AdultFemaleBoxScale": 1.0,
+      "_AdultFemaleBoxScale": "成年母体体型缩放(相对原版)。",
+
       "EstrusChaseRangeMultiplier": 2.0,
+      "_EstrusChaseRangeMultiplier": "发情期仇恨范围倍率(乘到 ChaseRange factor 上)。灰狼发情期仇恨范围×2，更容易主动攻击。",
+
       "CubMaleProbability": 0.5,
+      "_CubMaleProbability": "幼崽/自然生成个体的公体概率(0~1)。0=全母，1=全公，0.5=各半。",
+
       "RequireFeeding": false,
+      "_RequireFeeding": "条件性繁衍开关。false=繁殖季节到即自动发情(灰狼当前配置)；true=还需玩家喂食 FeedItem 指定物品后才发情。",
+
       "FeedItem": "",
-      "FedDurationSeconds": 600.0},
+      "_FeedItem": "喂食物品(方块类名)，支持 '类名' 或 '类名:数据'。仅 RequireFeeding=true 时生效。常见: RawMeatBlock(生肉)/TallGrassBlock(高草)/PumpkinBlock(南瓜)。留空=接受该生物原版会吃的任何食物。",
+
+      "FedDurationSeconds": 600.0,
+      "_FedDurationSeconds": "已喂食状态持续秒数(现实秒)。喂食后此秒数内可发情，到期需再次喂食。仅 RequireFeeding=true 时生效。"
+    },
 
     "Horse_Black":   { "BreedingSeasons": [ "Spring" ], "CubDurationDays": 6, "GestationSeconds": 2400.0, "MatingRequiredProximitySeconds": 12.0, "WeaknessSeconds": 1200.0, "RivalChaseTime": 30.0, "MateRadius": 2.5, "SeekRadius": 24.0, "BirthSpawnOffset": 1.5, "CubAttackFactor": 0.2, "AdultAttackFactor": 0.5, "MaleAttackBonus": 1.2, "CubBoxScale": 0.5, "AdultMaleBoxScale": 1.1, "AdultFemaleBoxScale": 1.0, "EstrusChaseRangeMultiplier": 1.0, "CubMaleProbability": 0.5, "RequireFeeding": true, "FeedItem": "TallGrassBlock", "FedDurationSeconds": 600.0 },
     "Horse_Bay":     { "BreedingSeasons": [ "Spring" ], "CubDurationDays": 6, "GestationSeconds": 2400.0, "MatingRequiredProximitySeconds": 12.0, "WeaknessSeconds": 1200.0, "RivalChaseTime": 30.0, "MateRadius": 2.5, "SeekRadius": 24.0, "BirthSpawnOffset": 1.5, "CubAttackFactor": 0.2, "AdultAttackFactor": 0.5, "MaleAttackBonus": 1.2, "CubBoxScale": 0.5, "AdultMaleBoxScale": 1.1, "AdultFemaleBoxScale": 1.0, "EstrusChaseRangeMultiplier": 1.0, "CubMaleProbability": 0.5, "RequireFeeding": true, "FeedItem": "TallGrassBlock", "FedDurationSeconds": 600.0 },
