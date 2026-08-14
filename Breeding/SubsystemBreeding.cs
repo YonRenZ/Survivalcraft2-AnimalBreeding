@@ -12,8 +12,10 @@ namespace Game
     /// <summary>
     /// 动物繁殖系统核心管理器(简化版)。
     /// 机制：
-    /// 1. 发情期：当前季节在物种 BreedingSeasons 内 且 不在虚弱期 → IsInEstrus=true。
-    /// 2. 公狼寻路：发情公狼在 SeekRadius 内寻找发情母狼，设路径走向她。
+    /// 1. 求偶期(IsInEstrus)：成年 + 当前季节在物种 BreedingSeasons 内 + 不在恢复期 +
+    ///    条件性繁衍判定——需喂食物种(RequireFeeding=true)必须已喂食(FedRemainingSeconds>0)。
+    ///    未喂食的需喂食物种不会进入求偶期，因此不参与寻路与求偶竞争。
+    /// 2. 公狼寻路：求偶公狼在 SeekRadius 内寻找求偶母狼，设路径走向她。
     /// 3. 交配：母狼发情 + MateRadius 内有发情公狼 → 累加相处计时。
     ///    相处达 MatingRequiredProximitySeconds 秒 → 交配：母狼怀孕，双方进入虚弱期。
     /// 4. 分娩：孕期倒计时到 0 → 在母体附近生成幼崽。分娩后母狼进入虚弱期。
@@ -1119,22 +1121,26 @@ namespace Game
         // ==================== 公体更新：寻找母狼 + 竞争打斗 ====================
 
         /// <summary>
-        /// 发情公狼逻辑：
-        /// 1. 在 SeekRadius 内寻找最近的发情母狼，记录 TargetFemaleId。
+        /// 求偶公体逻辑：
+        /// 1. 在 SeekRadius 内寻找最近的求偶母狼，记录 TargetFemaleId。
         /// 2. 检查是否有其他公狼也以同一母狼为目标 → 竞争对手。
         /// 3. 有竞争对手 → 通过 ComponentChaseBehavior.Attack 攻击对方(公狼间矛盾)。
         /// 4. 无竞争对手 → 设路径走向母狼。
+        ///
+        /// 重要：只有进入求偶期(IsInEstrus)的公体才会执行本逻辑——
+        /// 需喂食物种必须已喂食(FedRemainingSeconds>0)才会 IsInEstrus=true，
+        /// 因此"未喂食的需喂食动物在繁殖季节不会开始求偶竞争"。
         /// </summary>
         static void UpdateMale(Entity entity, BreedingState state, SpeciesConfig species)
         {
-            // 不在发情期 → 清除目标，不寻路
+            // 不在求偶期(含未喂食的需喂食物种) → 清除目标，不寻路、不竞争
             if (!state.IsInEstrus)
             {
                 state.TargetFemaleId = 0;
                 return;
             }
 
-            // 寻找最近的发情母狼
+            // 求偶中(已喂食或无需喂食) → 寻找最近的求偶母狼
             Entity female = FindNearestEstrusFemale(entity, state, species);
             if (female == null)
             {
@@ -1144,7 +1150,8 @@ namespace Game
 
             state.TargetFemaleId = female.Id;
 
-            // 检查是否有竞争对手(其他公狼也以同一母狼为目标)
+            // 检查是否有竞争对手(其他求偶中的公狼也以同一母狼为目标)
+            // FindRival 内部同样只接受 IsInEstrus=true(需喂食的已喂食)的对手
             Entity rival = FindRival(entity, state, female.Id, species);
             if (rival != null)
             {
