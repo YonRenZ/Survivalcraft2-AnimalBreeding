@@ -127,7 +127,7 @@ namespace Game
         {
             try
             {
-                if (creatureInfoWidget == null || entityValuesDictionary == null) return;
+                if (entityValuesDictionary == null) return;
 
                 string templateName = entityValuesDictionary.DatabaseObject?.Name;
                 if (string.IsNullOrEmpty(templateName)) return;
@@ -164,9 +164,21 @@ namespace Game
 
                 if (sb.Length == 0) return; // 无介绍也无配置 → 保留原版描述
 
-                LabelWidget details = creatureInfoWidget.Children.Find<LabelWidget>("BestiaryItem.Details");
-                if (details == null) return;
-                details.Text = sb.ToString();
+                string text = sb.ToString();
+
+                // 1. 列表页(BestiaryScreen)条目的 Details 标签
+                if (creatureInfoWidget != null)
+                {
+                    LabelWidget details = creatureInfoWidget.Children.Find<LabelWidget>("BestiaryItem.Details");
+                    if (details != null) details.Text = text;
+                }
+
+                // 2. 详情页(BestiaryDescriptionScreen)共用同一个 BestiaryCreatureInfo 对象，
+                //    修改 Description 后详情页 m_descriptionWidget.Text 会同步显示介绍+Stats。
+                if (bestiaryCreatureInfo != null)
+                {
+                    bestiaryCreatureInfo.Description = text;
+                }
             }
             catch (Exception e)
             {
