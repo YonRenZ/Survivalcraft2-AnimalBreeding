@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Xml.Linq;
 using Engine;
 using Engine.Graphics;
@@ -10,60 +10,67 @@ using Game;
 namespace Game
 {
     /// <summary>
-    /// 动物繁殖系统独立模组的加载入口。
-    /// 仅注册繁殖系统所需的钩子，不依赖荒野科技主模组的任何功能。
-    /// 所有逻辑委托给 SubsystemBreeding 静态类。
+    /// 动物繁殖系统 · 联机版(SurvivalcraftNet)适配入口。
     ///
-    /// 浮动文字渲染：通过 OnModelDrawExtra 钩子(ComponentModel.DrawExtras 回调)实现。
-    /// 该钩子对所有 ComponentModel(蒙皮 + 非蒙皮)都会触发，
-    /// 因此能覆盖原版 .dae 模型与第三方 glTF/PBR 蒙皮模型(如 HC 模组的生物)。
-    /// 用 SubsystemBreeding.ModelsRenderer.PrimitivesRenderer.FontBatch(...).QueueText(...) 入队文字(layer 1)，
-    /// 由 SubsystemModelsRenderer 在 DrawOrder=201 时统一 Flush，不需要自己 Flush。
+    /// 与单机版的差异适配：
+    ///   · 每帧驱动：联机版无 OnFactorsUpdate 钩子 → 本类实现 IUpdateable，
+    ///     在 OnProjectLoaded 时注册到 SubsystemUpdate(AddUpdateable)，OnProjectDisposed 注销。
+    ///   · 渲染：无 OnModelDrawExtra → 改用 OnModelRendererDrawExtra(签名含 alphaThreshold)。
+    ///   · 存档：无 OnReadSpawnData/OnSaveSpawnData/OnProjectXmlSaved →
+    ///       活体生物状态用 ProjectXmlSave 写入 Project.xml(BreedingModStates)，
+    ///       Despawn 生物状态联机版无法随实体保存 → 重新生成时按 EntityId 确定性分配性别兜底。
+    ///   · 骑乘拦截(ScoreMount)/图鉴介绍钩子：联机版未提供 → 已移除。
+    ///   · 季节：联机版无 SubsystemSeasons → SubsystemBreeding 用游戏天自算伪季节(30天/季)。
     /// </summary>
-    public class BreedingModLoader : ModLoader
+    public class BreedingModLoader : ModLoader, IUpdateable
     {
+        public UpdateOrder UpdateOrder => UpdateOrder.Default;
+
         public override void __ModInitialize()
         {
-            // 动物繁殖系统相关钩子：实体生命周期、存档读写、每帧更新、攻击力修正、模型绘制扩展
             ModsManager.RegisterHook("OnProjectLoaded", this);
             ModsManager.RegisterHook("OnProjectDisposed", this);
             ModsManager.RegisterHook("ProjectXmlLoad", this);
             ModsManager.RegisterHook("ProjectXmlSave", this);
-            ModsManager.RegisterHook("OnProjectXmlSaved", this);
             ModsManager.RegisterHook("OnEntityAdd", this);
             ModsManager.RegisterHook("OnEntityRemove", this);
-            ModsManager.RegisterHook("OnReadSpawnData", this);
-            ModsManager.RegisterHook("OnSaveSpawnData", this);
-            ModsManager.RegisterHook("OnFactorsUpdate", this);
             ModsManager.RegisterHook("OnMinerHit", this);
-            ModsManager.RegisterHook("OnModelDrawExtra", this);
-            ModsManager.RegisterHook("ScoreMount", this);
+            ModsManager.RegisterHook("OnModelRendererDrawExtra", this);
             ModsManager.RegisterHook("OnEatPickable", this);
-            ModsManager.RegisterHook("LoadCreatureInfoInBestiaryScreen", this);
-            ModsManager.RegisterHook("UpdateCreaturePropertiesInBestiaryDescriptionScreen", this);
 
-            Log.Information("[BreedingMod] 动物繁殖系统模组初始化(含 OnModelDrawExtra 渲染钩子 + OnEatPickable 喂食钩子)");
+            Log.Information("[BreedingMod] 动物繁殖系统模组初始化(联机版 SurvivalcraftNet 适配)");
         }
 
-        /// <summary>当 Project 加载完成时执行。繁殖系统在此缓存子系统引用 + 加载配置。</summary>
+        /// <summary>当 Project 加载完成时执行：初始化繁殖系统 + 注册每帧更新。</summary>
         public override void OnProjectLoaded(Project project)
         {
             SubsystemBreeding.Initialize(project);
+            // 联机版无 OnFactorsUpdate 钩子，模组自己注册为 IUpdateable 实现每帧更新
+            SubsystemUpdate subsystemUpdate = project.FindSubsystem<SubsystemUpdate>(true);
+            subsystemUpdate?.AddUpdateable(this);
         }
 
-        /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
+        /// <summary>Project 卸载时注销更新并清理缓存。</summary>
         public override void OnProjectDisposed()
         {
+            Project project = SubsystemBreeding.ProjectInstance;
+            if (project != null)
+            {
+                SubsystemUpdate subsystemUpdate = project.FindSubsystem<SubsystemUpdate>(true);
+                subsystemUpdate?.RemoveUpdateable(this);
+            }
             SubsystemBreeding.ClearXmlCache();
+        }
+
+        /// <summary>每帧更新(由 SubsystemUpdate 驱动)。</summary>
+        public void Update(float dt)
+        {
+            SubsystemBreeding.Update(dt);
         }
 
         // ==================== Project.xml 持久化(活着的生物状态) ====================
 
-        /// <summary>
-        /// 世界加载时、ProjectData 构造之前触发。读取 Project.xml 中的活体生物繁殖状态。
-        /// 时序：ProjectXmlLoad → ProjectData 构造(创建实体) → OnEntityAdd → OnProjectLoaded(Initialize)。
-        /// 注：使用单参数重载(兼容旧版 DLL；三参数重载在较新版本才提供)。
-        /// </summary>
+        /// <summary>世界加载时读取 Project.xml 中的活体生物繁殖状态。</summary>
 #pragma warning disable CS0618
         public override void ProjectXmlLoad(XElement xElement)
         {
@@ -72,20 +79,10 @@ namespace Game
 #pragma warning restore CS0618
 
         /// <summary>
-        /// 世界保存时、ProjectData.Save 之前触发(备用保存点)。
-        /// 把活体生物繁殖状态写入 Project.xml。SaveXmlStates 内部有 Remove 旧节点逻辑，重复调用安全。
+        /// 世界保存时把活体生物繁殖状态写入 Project.xml。
+        /// 联机版无 OnProjectXmlSaved，此为主保存点(写入 BreedingModStates 节点)。
         /// </summary>
         public override void ProjectXmlSave(XElement xElement)
-        {
-            SubsystemBreeding.SaveXmlStates(xElement);
-        }
-
-        /// <summary>
-        /// 世界保存时、ProjectData.Save 之后、写盘之前触发(主保存点)。
-        /// 把活体生物繁殖状态写入 Project.xml。被 Despawn 的生物已通过 OnSaveSpawnData 保存，
-        /// 此处只处理 s_states 中仍存活的生物。
-        /// </summary>
-        public override void OnProjectXmlSaved(XElement xElement)
         {
             SubsystemBreeding.SaveXmlStates(xElement);
         }
@@ -102,139 +99,6 @@ namespace Game
             SubsystemBreeding.OnEntityRemove(entity);
         }
 
-        public override void OnReadSpawnData(Entity entity, SpawnEntityData spawnEntityData)
-        {
-            SubsystemBreeding.OnReadSpawnData(entity, spawnEntityData);
-        }
-
-        public override void OnSaveSpawnData(ComponentSpawn spawn, SpawnEntityData spawnEntityData)
-        {
-            SubsystemBreeding.OnSaveSpawnData(spawn, spawnEntityData);
-        }
-
-        // ==================== 图鉴生物介绍(LoadCreatureInfoInBestiaryScreen / UpdateCreaturePropertiesInBestiaryDescriptionScreen) ====================
-
-        /// <summary>
-        /// 构建图鉴文本 = 生物介绍(Lang) + 动态基础信息(配置读取)。
-        /// 无介绍也无配置时返回 null(保留原版描述)。
-        /// </summary>
-        static string BuildBestiaryText(string templateName)
-        {
-            System.Text.StringBuilder sb = new();
-
-            // 1. 模组生物介绍(zh-CN 中文 / en-US 英文，其他语言回退英文；缺失则跳过)
-            string intro = LanguageControl.Get(out bool foundIntro, "BreedingMod", "SpeciesDescription", templateName);
-            if (foundIntro && !string.IsNullOrEmpty(intro))
-            {
-                sb.Append(intro);
-            }
-
-            // 2. 动态基础信息(攻击力/体型/时间，从配置读取，多语言标签)
-            // 注意：图鉴可在主菜单(未进入世界)打开，此时 BreedingConfig.Current 为 null，
-            // 需主动加载配置，否则 Stats 无法生成。
-            BreedingConfig cfg = BreedingConfig.Current;
-            if (cfg == null)
-            {
-                BreedingConfig.Load();
-                cfg = BreedingConfig.Current;
-            }
-            SpeciesConfig species = cfg?.GetSpecies(templateName);
-            if (species != null)
-            {
-                if (sb.Length > 0) sb.AppendLine();
-                sb.AppendLine(string.Format(
-                    LanguageControl.Get("BreedingMod", "Stats", "Attack"),
-                    (species.AdultAttackFactor * species.MaleAttackBonus).ToString("0.##"),
-                    (species.AdultAttackFactor * 1.0).ToString("0.##")));
-                sb.AppendLine(string.Format(
-                    LanguageControl.Get("BreedingMod", "Stats", "Size"),
-                    species.AdultMaleBoxScale.ToString("0.##"),
-                    species.AdultFemaleBoxScale.ToString("0.##")));
-                sb.AppendLine(string.Format(
-                    LanguageControl.Get("BreedingMod", "Stats", "Time"),
-                    (species.GestationSeconds / 1200f).ToString("0.##"),
-                    species.CubDurationDays.ToString("0.##"),
-                    (species.WeaknessSeconds / 1200f).ToString("0.##")));
-            }
-
-            return sb.Length > 0 ? sb.ToString() : null;
-        }
-
-        /// <summary>
-        /// 图鉴列表页(BestiaryScreen)加载每个生物条目时触发：条目 Details 显示介绍+Stats。
-        /// </summary>
-        public override void LoadCreatureInfoInBestiaryScreen(BestiaryScreen bestiaryScreen,
-            ContainerWidget creatureInfoWidget,
-            BestiaryCreatureInfo bestiaryCreatureInfo,
-            ValuesDictionary entityValuesDictionary)
-        {
-            try
-            {
-                if (creatureInfoWidget == null || entityValuesDictionary == null) return;
-
-                string templateName = entityValuesDictionary.DatabaseObject?.Name;
-                if (string.IsNullOrEmpty(templateName)) return;
-
-                string text = BuildBestiaryText(templateName);
-                if (string.IsNullOrEmpty(text)) return;
-
-                LabelWidget details = creatureInfoWidget.Children.Find<LabelWidget>("BestiaryItem.Details");
-                if (details != null) details.Text = text;
-            }
-            catch (Exception e)
-            {
-                Log.Warning("[Breeding] 图鉴列表生物介绍加载失败: " + e.Message);
-            }
-        }
-
-        /// <summary>
-        /// 图鉴详情页(BestiaryDescriptionScreen)每次显示/切换生物时触发：
-        /// 在详情页 Description 区域显示介绍+Stats(攻击力/体型/孕期/成长期/恢复期)。
-        /// </summary>
-        public override void UpdateCreaturePropertiesInBestiaryDescriptionScreen(BestiaryDescriptionScreen bestiaryDescriptionScreen,
-            BestiaryCreatureInfo bestiaryCreatureInfo,
-            ValuesDictionary entityValuesDictionary)
-        {
-            try
-            {
-                if (bestiaryDescriptionScreen == null || entityValuesDictionary == null) return;
-
-                string templateName = entityValuesDictionary.DatabaseObject?.Name;
-                if (string.IsNullOrEmpty(templateName)) return;
-
-                string text = BuildBestiaryText(templateName);
-                if (string.IsNullOrEmpty(text)) return;
-
-                // 1. 详情页 Description 标签(介绍 + Stats)
-                LabelWidget description = bestiaryDescriptionScreen.Children.Find<LabelWidget>("Description");
-                if (description != null)
-                {
-                    description.Text = text;
-                }
-                else
-                {
-                    Log.Warning("[Breeding] 图鉴详情未找到 Description 标签");
-                }
-
-                // 2. 兜底：同时更新 BestiaryCreatureInfo.Description(详情页 71 行直接读它)
-                if (bestiaryCreatureInfo != null)
-                {
-                    bestiaryCreatureInfo.Description = text;
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Warning("[Breeding] 图鉴详情生物介绍加载失败: " + e.Message);
-            }
-        }
-
-#pragma warning disable CS0618
-        public override void OnFactorsUpdate(ComponentFactors componentFactors, float dt)
-        {
-            SubsystemBreeding.OnFactorsUpdate(componentFactors, dt);
-        }
-#pragma warning restore CS0618
-
         public override void OnMinerHit(ComponentMiner miner,
             ComponentBody componentBody,
             Vector3 hitPoint,
@@ -248,43 +112,27 @@ namespace Game
             SubsystemBreeding.OnMinerHit(miner, componentBody, ref attackPower);
         }
 
-        // ==================== 骑乘拦截 ====================
+        // ==================== 喂食求偶 ====================
 
-        public override void ScoreMount(ComponentRider componentRider, ComponentMount componentMount, out float? score)
+        /// <summary>生物吃掉落物时触发，处理"喂食求偶"逻辑。</summary>
+        public override void OnEatPickable(ComponentEatPickableBehavior eatPickableBehavior, Pickable EatPickable, out bool Dealed)
         {
-            SubsystemBreeding.OnScoreMount(componentRider, componentMount, out score);
+            SubsystemBreeding.OnEatPickable(eatPickableBehavior, EatPickable, out Dealed);
         }
 
-        // ==================== 喂食发情 ====================
+        // ==================== 浮动文字渲染(OnModelRendererDrawExtra) ====================
 
         /// <summary>
-        /// 生物吃掉落物时触发。委托给 SubsystemBreeding 处理"喂食发情"逻辑。
-        /// 此钩子在生物吃完物品(Count 已扣减)后触发，用于标记该个体为"已喂食"。
-        /// </summary>
-        public override void OnEatPickable(ComponentEatPickableBehavior eatPickableBehavior, Pickable eatPickable, out bool dealed)
-        {
-            SubsystemBreeding.OnEatPickable(eatPickableBehavior, eatPickable, out dealed);
-        }
-
-        // ==================== 浮动文字渲染(OnModelDrawExtra 对蒙皮+非蒙皮模型均触发) ====================
-
-        /// <summary>
-        /// 每个 ComponentModel 绘制完毕后由 ComponentModel.DrawExtras 回调。
-        /// 在此为被追踪的繁殖生物入队 3 行浮动文字 + 1 个图形进度条：
+        /// 每个 ComponentModel 由 SubsystemModelsRenderer 渲染时触发(联机版钩子)。
+        /// 为被追踪的繁殖生物入队 3 行浮动文字 + 1 个图形进度条：
         ///   第1行：性别 + 生物显示名(例如 "♂公 灰狼")
-        ///   第2行：成长阶段 + 繁殖状态(例如 "幼崽期 | 成长中" / "成年期 | 怀孕中(0.5天)")
+        ///   第2行：成长阶段 + 繁殖状态(例如 "幼崽期 | 成长中" / "成年期 | 孕期中(0.5天)")
         ///   第3行：成长进度百分比(例如 "成长 60%")
         ///   第4行：图形进度条(FlatBatch3D 画矩形，背景灰 + 前景绿按进度填充)
-        ///
-        /// 文字用 SubsystemBreeding.ModelsRenderer.PrimitivesRenderer.FontBatch(layer=1) 入队，
-        /// 进度条用 FlatBatch(layer=1) 画矩形，均由 SubsystemModelsRenderer 在 DrawOrder=201 时统一 Flush。
         /// </summary>
-        public override void OnModelDrawExtra(ComponentModel componentModel, Camera camera, out bool skip)
+        public override void OnModelRendererDrawExtra(SubsystemModelsRenderer modelsRenderer, ComponentModel componentModel, Camera camera, float? alphaThreshold)
         {
-            skip = false;
             if (!SubsystemBreeding.Initialized) return;
-
-            SubsystemModelsRenderer modelsRenderer = SubsystemBreeding.ModelsRenderer;
             if (modelsRenderer == null) return;
 
             Entity entity = componentModel?.Entity;
@@ -308,7 +156,6 @@ namespace Game
             if (health != null && health.DeathTime.HasValue) return;
 
             // 头顶世界坐标(参考原版 ComponentDisplayHealthAndNameBehavior)
-            // 整体下移到头顶上方 0.5 格(原 0.9，下移 0.4)；行距 0.15 格
             float height = body.BoxSize.Y;
             Vector3 headPos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.5f, 0f);
             Vector3 line2Pos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.35f, 0f);
@@ -333,7 +180,7 @@ namespace Game
             BitmapFont font = LabelWidget.BitmapFont;
             double currentDay = SubsystemBreeding.GetCurrentDay();
 
-            // 字体批次(layer 1，由 SubsystemModelsRenderer 在 DrawOrder=201 统一 Flush)
+            // 字体批次(layer 1，由 SubsystemModelsRenderer 统一 Flush)
             FontBatch3D fontBatch = modelsRenderer.PrimitivesRenderer.FontBatch(
                 font, 1,
                 DepthStencilState.DepthRead,
@@ -372,14 +219,10 @@ namespace Game
                 float halfTotalPx = totalWidthPx * 0.5f;
 
                 // 文字左对齐：起点 = vector3 左移 halfTotalPx(让整体居中)，垂直底部对齐
-                // 注: TextAnchor.Bottom 时 textPos 是文字左下角，文字向上延伸绘制
                 Vector3 textPos = vector3 + right * -halfTotalPx;
                 fontBatch.QueueText(line3, textPos, right, down, color * 0.85f, TextAnchor.Left | TextAnchor.Bottom);
 
                 // 进度条：紧跟文字右侧 gapPx 像素处；垂直居中于文字再额外上移 3.0 像素
-                //   textPos 是文字左下角，文字顶部 = textPos + up * textHeightPx
-                //   基准：进度条顶部 = 文字顶部 - (文字高 - 进度条高) / 2 (垂直居中)
-                //   微调：再沿 up 方向偏移 3.0 像素(进度条相对文字再上移，补偿字体基线偏移)
                 float vAlignOffsetPx = (textHeightPx - barHeight) * 0.5f + 3.0f;
                 Vector3 barOrigin = textPos + right * (textWidthPx + gapPx) + down * -vAlignOffsetPx;
                 DrawProgressBar(modelsRenderer, barOrigin, right, down, progress, color);
@@ -388,13 +231,6 @@ namespace Game
 
         /// <summary>
         /// 用 FlatBatch3D 在视图空间绘制带白色边框的矩形进度条(与文字同一行，紧贴文字右侧)。
-        /// 单位说明：right/down 向量长度 = 0.005，即 1 单位 = 1 屏幕像素。
-        /// barOrigin 为进度条左上角预期位置(视图空间)，方法内部做 Z 偏置。
-        /// 绘制层次(由内到外，所有顶点朝相机方向 +Z 偏置 zBias 避免被自身模型遮挡)：
-        ///   1. 背景填充矩形(灰半透明，固定大小，覆盖整个进度条区域)
-        ///   2. 前景填充矩形(绿色，宽度 = 总宽 × progress，从左对齐填充)
-        ///   3. 白色边框(4 条线，固定大小，不随 progress 变化)
-        /// 关于"两个三角形"：GPU 没有矩形图元，QueueTriangle×2 沿对角线拼矩形是标准做法。
         /// </summary>
         static void DrawProgressBar(SubsystemModelsRenderer modelsRenderer,
             Vector3 barOrigin, Vector3 right, Vector3 down,
@@ -406,15 +242,14 @@ namespace Game
                 RasterizerState.CullNoneScissor,
                 BlendState.AlphaBlend);
 
-            const float barWidth = 100f;     // 进度条总宽(像素) — 加长版
+            const float barWidth = 100f;     // 进度条总宽(像素)
             const float barHeight = 9f;      // 进度条高度(像素)
             const float zBias = 0.01f;       // 朝相机 Z 偏置，避免被自身模型遮挡
 
-            // 进度条四角(视图空间)：barOrigin 为左上角预期位置，朝相机偏置 zBias
             Vector3 topLeft = barOrigin + Vector3.UnitZ * zBias;
-            Vector3 topRgt = topLeft + right * barWidth;
+            Vector3 topRgt  = topLeft + right * barWidth;
             Vector3 botLeft = topLeft + down * barHeight;
-            Vector3 botRgt = topRgt + down * barHeight;
+            Vector3 botRgt  = topRgt  + down * barHeight;
 
             // 1. 背景填充矩形(灰半透明，固定大小)
             Color bgColor = new Color(40, 40, 40, 180) * baseColor;
@@ -433,32 +268,19 @@ namespace Game
             }
 
             // 3. 白色边框(4 条线，固定大小，不随 progress 变化)
-            //    边框稍亮但保留淡出，与文字一致
             Color borderColor = new Color(240, 240, 240, 230) * baseColor;
-            flatBatch.QueueLine(topLeft, topRgt, borderColor);   // 上边
-            flatBatch.QueueLine(botLeft, botRgt, borderColor);   // 下边
-            flatBatch.QueueLine(topLeft, botLeft, borderColor);  // 左边
-            flatBatch.QueueLine(topRgt, botRgt, borderColor);    // 右边
+            flatBatch.QueueLine(topLeft, topRgt, borderColor);
+            flatBatch.QueueLine(botLeft, botRgt, borderColor);
+            flatBatch.QueueLine(topLeft, botLeft, borderColor);
+            flatBatch.QueueLine(topRgt, botRgt, borderColor);
         }
 
-        /// <summary>
-        /// 用两个三角形拼成实心矩形(修复引擎 QueueQuad 单色版的三角形重叠 bug)。
-        ///
-        /// 引擎 FlatBatch3D.QueueQuad(p1,p2,p3,p4,color) 单色版的三角形拆分为：
-        ///   △1 = (p1,p2,p3)，△2 = (p3,p4,p1)
-        /// 注释标 p1=左上 p2=右上 p3=左下 p4=右下，则 △2 的对角边是 p1-p3(即左边)，
-        /// 导致两三角形沿左边重叠、尖角分别朝右上和右下 → 视觉上像"共用底边、尖在不同处"的错位矩形。
-        ///
-        /// 本方法改用正确拆分(对角线 p2-p3，即右上到左下)：
-        ///   △1 = (p1,p2,p3) = (左上,右上,左下)
-        ///   △2 = (p2,p3,p4) = (右上,左下,右下)
-        /// 两三角形沿对角线 p2-p3 拼合，刚好覆盖整个矩形区域，无重叠无缺口。
-        /// </summary>
+        /// <summary>用两个三角形拼成实心矩形(修复引擎 QueueQuad 单色版的三角形重叠 bug)。</summary>
         static void QueueRect(FlatBatch3D flatBatch,
             Vector3 topLeft, Vector3 topRgt, Vector3 botLeft, Vector3 botRgt, Color color)
         {
-            flatBatch.QueueTriangle(topLeft, topRgt, botLeft, color); // △1: 左上,右上,左下
-            flatBatch.QueueTriangle(topRgt, botLeft, botRgt, color);  // △2: 右上,左下,右下
+            flatBatch.QueueTriangle(topLeft, topRgt, botLeft, color);
+            flatBatch.QueueTriangle(topRgt, botLeft, botRgt, color);
         }
     }
 }

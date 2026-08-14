@@ -60,12 +60,14 @@ namespace Game
         static Project s_project;
         static SubsystemCreatureSpawn s_creatureSpawn;
         static SubsystemBodies s_bodies;
-        static SubsystemSeasons s_seasons;
         static SubsystemTimeOfDay s_timeOfDay;
         static SubsystemTime s_time;
         static SubsystemModelsRenderer s_modelsRenderer;
         static Random s_random = new();
         static bool s_initialized;
+
+        /// <summary>当前 Project 实例(联机版用于注册/注销 IUpdateable 每帧更新)。</summary>
+        public static Project ProjectInstance => s_project;
 
         /// <summary>渲染钩子(OnModelDrawExtra)用它获取 FontBatch 入队悬浮文字。</summary>
         public static SubsystemModelsRenderer ModelsRenderer => s_modelsRenderer;
@@ -95,7 +97,6 @@ namespace Game
             s_project = project;
             s_creatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(true);
             s_bodies = project.FindSubsystem<SubsystemBodies>(true);
-            s_seasons = project.FindSubsystem<SubsystemSeasons>(true);
             s_timeOfDay = project.FindSubsystem<SubsystemTimeOfDay>(true);
             s_time = project.FindSubsystem<SubsystemTime>(true);
             s_modelsRenderer = project.FindSubsystem<SubsystemModelsRenderer>(true);
@@ -794,80 +795,36 @@ namespace Game
             }
         }
 
-        public static void OnReadSpawnData(Entity entity, SpawnEntityData spawnEntityData)
-        {
-            if (entity == null || spawnEntityData == null)
-            {
-                return;
-            }
 
-            BreedingState state = BreedingState.Deserialize(spawnEntityData.Data);
-            if (state == null)
-            {
-                return;
-            }
+        // ==================== 每帧更新(联机版: 由 SubsystemUpdate 驱动 BreedingModLoader.Update) ====================
 
-            // 判断数据来源：如果 EntityId 匹配，说明来自 SpawnChunk；否则来自 Project.xml
-            string source = spawnEntityData.EntityId == entity.Id ? "SpawnChunk" : "ProjectXml";
-
-            string templateName = entity.ValuesDictionary.DatabaseObject?.Name;
-            if (string.IsNullOrEmpty(templateName)) return;
-
-            string normalizedTemplate = NormalizeTemplateName(templateName);
-
-            // 存档状态与实体模板必须一致；不一致说明数据过时(如生物已升级成带鞍模板)，丢弃由 OnEntityAdd 重新初始化
-            if (!string.Equals(state.TemplateName, normalizedTemplate, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            // 无条件恢复存档状态。
-            // SCAPI1.8 中 OnReadSpawnData 只在游戏运行时由 SubsystemSpawn.SpawnEntity 触发
-            // (被 Despawn 的生物重新生成时)，此时 s_initialized 已为 true。
-            // 若因 s_initialized 而忽略存档状态，随后 OnEntityAdd 会按"自然生成"随机分配性别，
-            // 导致生物性别随地图重新打开/Despawn 循环而随机变化。存档状态是权威数据，必须恢复。
-            s_states[entity] = state;
-
-            // 仅在游戏运行时立即应用体型；Initialize 之前的调用(旧版 SCAPI 加载路径)由 backfill 情况1统一处理
-            if (!s_initialized) return;
-
-            BreedingConfig cfg = BreedingConfig.Current;
-            if (cfg?.Enabled != true) return;
-
-            if (cfg.GetSpecies(normalizedTemplate) == null) return;
-
-            CacheAndApplyBoxSize(entity, state, cfg);
-        }
-
-        public static void OnSaveSpawnData(ComponentSpawn spawn, SpawnEntityData spawnEntityData)
-        {
-            if (!s_initialized || spawn?.Entity == null || spawnEntityData == null)
-            {
-                return;
-            }
-            if (!s_states.TryGetValue(spawn.Entity, out BreedingState state))
-            {
-                return;
-            }
-            spawnEntityData.Data = state.Serialize();
-        }
-
-        // ==================== 每帧更新(由 OnFactorsUpdate 驱动) ====================
-
-        public static void OnFactorsUpdate(ComponentFactors factors, float dt)
+        /// <summary>每帧更新所有被追踪的生物(联机版替代单机版 OnFactorsUpdate 钩子)。</summary>
+        public static void Update(float dt)
         {
             if (!s_initialized) return;
             BreedingConfig cfg = BreedingConfig.Current;
             if (cfg?.Enabled != true) return;
-            if (factors?.Entity == null) return;
+            if (s_states.Count == 0) return;
 
-            Entity entity = factors.Entity;
-            if (!s_states.TryGetValue(entity, out BreedingState state)) return;
+            // 快照遍历：UpdateFemale/UpdateMale 内部可能增删 s_states(交配/产仔/移除)
+            List<KeyValuePair<Entity, BreedingState>> snapshot = new(s_states);
+            foreach (KeyValuePair<Entity, BreedingState> kv in snapshot)
+            {
+                Entity entity = kv.Key;
+                BreedingState state = kv.Value;
+                if (entity == null || state == null) continue;
 
-            SpeciesConfig species = cfg.GetSpecies(state.TemplateName);
-            if (species == null) return;
+                SpeciesConfig species = cfg.GetSpecies(state.TemplateName);
+                if (species == null) continue;
 
-            // 1. 虚弱期倒计时(公母共用)
+                UpdateEntity(entity, state, species, dt);
+            }
+        }
+
+        /// <summary>更新单只生物。</summary>
+        static void UpdateEntity(Entity entity, BreedingState state, SpeciesConfig species, float dt)
+        {
+            // 1. 恢复期倒计时(公母共用)
             if (state.WeaknessRemainingSeconds > 0f)
             {
                 state.WeaknessRemainingSeconds -= dt;
@@ -887,10 +844,10 @@ namespace Game
                 }
             }
 
-            // 2. 发情期判定(成年 + 在季节 + 不在虚弱期 + 喂食条件满足)
+            // 2. 求偶期判定(成年 + 在季节 + 不在恢复期 + 喂食条件满足)
             // 条件性繁衍: RequireFeeding=true 时还要求 IsFed(已喂食状态未过期)
-            // 幼崽不发情，避免幼崽与成年公狼冲突
-            Season currentSeason = s_seasons.Season;
+            // 幼崽不求偶，避免幼崽与成年公狼冲突
+            Season currentSeason = GetCurrentSeason();
             state.IsInEstrus = state.IsAdult
                 && species.ParsedSeasons.Contains(currentSeason)
                 && !state.IsWeak
@@ -902,8 +859,8 @@ namespace Game
             // 4. 体型随成长度更新(节流，每 60 帧一次)
             UpdateBoxSize(entity, state, species);
 
-            // 5. 仇恨范围 factor(幼崽/怀孕母狼=0，发情期×倍率)
-            ApplyChaseRangeFactor(factors, state, species);
+            // 5. 仇恨范围修改(联机版无 ComponentFactors，已移除；如需可用
+            //    ComponentChaseBehavior 的 m_dayChaseRange/m_nightChaseRange 自行扩展)
 
             // 6. 性别特定更新
             if (state.Gender == BreedingGender.Female)
@@ -913,6 +870,25 @@ namespace Game
             else
             {
                 UpdateMale(entity, state, species);
+            }
+        }
+
+        /// <summary>
+        /// 当前季节(联机版无 SubsystemSeasons，用游戏天自算伪季节：每 30 天换一季)。
+        /// 0~29=春、30~59=夏、60~89=秋、90~119=冬，循环。
+        /// 配置中的 BreedingSeasons(Spring/Summer/Autumn/Winter) 按此映射生效。
+        /// </summary>
+        static Season GetCurrentSeason()
+        {
+            double day = s_timeOfDay != null ? s_timeOfDay.Day : 0d;
+            int seasonIndex = ((int)Math.Floor(day / 30d)) % 4;
+            if (seasonIndex < 0) seasonIndex += 4;
+            switch (seasonIndex)
+            {
+                case 0: return Season.Spring;
+                case 1: return Season.Summer;
+                case 2: return Season.Autumn;
+                default: return Season.Winter;
             }
         }
 
@@ -1338,25 +1314,6 @@ namespace Game
         /// 骑乘拦截：当玩家试图骑乘处于禁止交互状态(繁殖期/幼崽期)的生物时返回 -1 阻止。
         /// 由 BreedingModLoader.ScoreMount 调用。
         /// </summary>
-        public static void OnScoreMount(ComponentRider rider, ComponentMount mount, out float? score)
-        {
-            score = null;
-            if (!s_initialized) return;
-            BreedingConfig cfg = BreedingConfig.Current;
-            if (cfg?.Enabled != true) return;
-            if (mount?.Entity == null) return;
-
-            Entity mountEntity = mount.Entity;
-            if (!s_states.TryGetValue(mountEntity, out BreedingState state)) return;
-
-            SpeciesConfig species = cfg.GetSpecies(state.TemplateName);
-            if (species == null) return;
-
-            if (IsInteractBlocked(state, species))
-            {
-                score = -1f; // 返回负分阻止骑乘
-            }
-        }
 
         // ==================== 喂食发情(OnEatPickable hook) ====================
 
@@ -1424,59 +1381,6 @@ namespace Game
         /// · 发情期(非虚弱)：ChaseRange ×EstrusChaseRangeMultiplier
         /// · 其他：无额外 factor(正常仇恨)
         /// </summary>
-        static void ApplyChaseRangeFactor(ComponentFactors factors, BreedingState state, SpeciesConfig species)
-        {
-            try
-            {
-                if (!factors.OtherFactors.TryGetValue("ChaseRange", out List<ComponentLevel.Factor> list))
-                {
-                    list = new List<ComponentLevel.Factor>();
-                    factors.OtherFactors["ChaseRange"] = list;
-                }
-
-                // 幼崽不产生仇恨
-                if (state.Stage == GrowthStage.Cub)
-                {
-                    list.Add(new ComponentLevel.Factor
-                    {
-                        Name = "Breeding.Cub",
-                        Value = 0f,
-                        FactorAdditionType = FactorAdditionType.Multiply,
-                        Description = "幼崽不产生仇恨"
-                    });
-                    return;
-                }
-
-                // 怀孕母狼不产生仇恨
-                if (state.Gender == BreedingGender.Female && state.PregnancyRemainingSeconds > 0f)
-                {
-                    list.Add(new ComponentLevel.Factor
-                    {
-                        Name = "Breeding.Pregnant",
-                        Value = 0f,
-                        FactorAdditionType = FactorAdditionType.Multiply,
-                        Description = "怀孕母狼不产生仇恨"
-                    });
-                    return;
-                }
-
-                // 发情期仇恨范围倍率
-                if (state.IsInEstrus)
-                {
-                    list.Add(new ComponentLevel.Factor
-                    {
-                        Name = "Breeding.Estrus",
-                        Value = species.EstrusChaseRangeMultiplier,
-                        FactorAdditionType = FactorAdditionType.Multiply,
-                        Description = "发情期仇恨范围 ×" + species.EstrusChaseRangeMultiplier
-                    });
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Warning("[Breeding] ApplyChaseRangeFactor 失败: " + e.Message);
-            }
-        }
 
         // ==================== 调试/查询 ====================
 
