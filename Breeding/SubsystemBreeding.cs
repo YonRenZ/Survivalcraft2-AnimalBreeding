@@ -86,10 +86,6 @@ namespace Game
             Dictionary<Entity, BreedingState> cachedFromSpawn = s_states.Count > 0
                 ? new Dictionary<Entity, BreedingState>(s_states)
                 : null;
-            // 诊断：XML 缓存全量转储(EntityId → 存档性别)，与后面 backfill 结果对照
-            string xmlCacheDump = s_xmlCachedStates.Count > 0
-                ? string.Join(",", s_xmlCachedStates.Select(kv => kv.Key + "->" + GenderOfSerialized(kv.Value)))
-                : "(空)";
 
             // 清空旧世界残留(静态字段跨世界保留，不清空会导致旧 Entity 引用泄漏)
             s_states.Clear();
@@ -222,6 +218,7 @@ namespace Game
                     {
                         if (!string.Equals(cached.TemplateName, normTn, StringComparison.Ordinal))
                         {
+                            // 模板名不匹配：丢弃旧状态，落入情况3确定性分配
                             s_states.Remove(existing);
                         }
                         else
@@ -231,10 +228,6 @@ namespace Game
                             hit1++;
                             continue;
                         }
-                    }
-                    else if (s_xmlCachedStates.Count > 0)
-                    {
-                        // XML 缓存有内容但本实体没有对应条目(可能是 EntityId 不匹配的线索)
                     }
 
                     // 情况3：无任何存档(新生物/首次生成) → 按自然生成成体初始化。
@@ -267,10 +260,6 @@ namespace Game
                     }
                 }
 
-                // 诊断：当前项目里被追踪的所有生物最终状态全量转储
-                string finalStatesDump = s_states.Count > 0
-                    ? string.Join(",", s_states.Select(kv => (kv.Key != null ? kv.Key.Id.ToString() : "null") + ":" + (kv.Value != null ? kv.Value.TemplateName + ":" + kv.Value.Gender.ToString() : "null")))
-                    : "(空)";
             }
 
             // backfill 完成，XML 缓存不再需要
@@ -310,20 +299,7 @@ namespace Game
                 if (entityId != 0 && !string.IsNullOrEmpty(data))
                 {
                     s_xmlCachedStates[entityId] = data;
-                    // 尝试反序列化以记录性别
-                    try
-                    {
-                        BreedingState st = BreedingState.Deserialize(data);
-                        if (st != null)
-                        else
-                    }
-                    catch (Exception ex)
-                    {
-                    }
                     count++;
-                }
-                else
-                {
                 }
             }
             Log.Information($"[Breeding][读档] LoadXmlStates: 从 Project.xml 读取 {count} 个活体生物状态");
@@ -489,9 +465,6 @@ namespace Game
                             s_xmlCachedStates[entityId] = data;
                             count++;
                         }
-                        else
-                        {
-                        }
                     }
                     Log.Information($"[Breeding][读档] LoadStatesFromFile: 从 BreedingStates.xml 读取 {count} 个状态");
                 }
@@ -656,7 +629,6 @@ namespace Game
             if (entity == null) return;
 
             bool hadState = s_states.TryGetValue(entity, out BreedingState state);
-            string removeDetail = hadState ? ", 性别=" + state.Gender.ToString() : "";
 
             // 上鞍撤销暂存：仅当被移除的是"活的、处于禁止交互状态、配置了交互拦截的可骑乘物种"时暂存。
             // 过滤条件说明：
@@ -828,8 +800,6 @@ namespace Game
             {
                 return;
             }
-
-            string entryTemplate = entity.ValuesDictionary.DatabaseObject?.Name;
 
             BreedingState state = BreedingState.Deserialize(spawnEntityData.Data);
             if (state == null)
