@@ -101,6 +101,24 @@
 
 > 幼崽和怀孕母狼的仇恨范围固定为 0（不产生仇恨），不受此参数影响。
 
+### 区域密度参数（繁殖效率限制）
+
+控制"区域内生物越多、配对效率越低"，防止动物无限繁殖。机制：以母体为中心、`DensityRadius` 内同繁殖群（含别名，如 Cow↔Bull）成年个体数超过 `DensityLimit` 后，配对效率按 `DensityPenaltyStep` 逐级降低，作用于母体"相处计时"的累加速度（头顶 `求偶中(相处N秒)` 的 N 增长变慢）。
+
+```
+密度因子 = 1.0                              (个体数 ≤ DensityLimit)
+密度因子 = max(1 - 超出数 × DensityPenaltyStep, 0)   (个体数 > DensityLimit)
+```
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `DensityEnabled` | bool | `true` | 密度限制总开关。 |
+| `DensityRadius` | float | `32` | 统计半径（方块）。 |
+| `DensityLimit` | float | `8` | 理想上限（低于此值效率 100%）。 |
+| `DensityPenaltyStep` | float | `0.15` | 每超 1 只的效率降低量（0~1）。 |
+
+> **示例**：`DensityLimit=8, DensityPenaltyStep=0.15` → 第 9 只成年个体时效率 85%，第 10 只 70%，…… 第 15 只时降到 0（完全停止配对）。
+
 ### 交互拦截参数（可骑乘/可上鞍物种专用）
 
 控制繁殖期间和幼崽期间是否禁止玩家对生物交互（上鞍 + 骑乘）。仅对可上鞍/可骑乘物种有意义（Horse/Donkey/Camel/Reindeer/Ostrich），对其他物种配置无害但无实际效果。

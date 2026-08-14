@@ -232,6 +232,24 @@ namespace Game
         /// <summary>幼崽/自然生成个体的公体概率(0~1)。</summary>
         public float CubMaleProbability { get; set; } = 0.5f;
 
+        // ==================== 区域密度参数(繁殖效率限制) ====================
+
+        /// <summary>区域繁殖密度限制开关。true=开启，区域内同繁殖群个体越多、配对效率越低。</summary>
+        public bool DensityEnabled { get; set; } = true;
+
+        /// <summary>密度统计半径(方块)。以母体为中心统计此半径内的同繁殖群(含别名)成年个体数。</summary>
+        public float DensityRadius { get; set; } = 32f;
+
+        /// <summary>区域理想上限。同繁殖群个体数不超过此值时配对效率 100%。</summary>
+        public float DensityLimit { get; set; } = 8f;
+
+        /// <summary>
+        /// 超过上限后每多一只的效率降低量(0~1)。
+        /// 例: 0.15 = 每多一只配对效率 -15%，降到 0 封底(完全停止配对)。
+        /// 效率作用于母体"相处计时"的累加速度：密度越高，计时增长越慢。
+        /// </summary>
+        public float DensityPenaltyStep { get; set; } = 0.15f;
+
         // ==================== 交互拦截(繁殖期/幼崽期禁止上鞍骑乘) ====================
 
         /// <summary>
@@ -369,6 +387,12 @@ namespace Game
 
             // 条件性繁衍参数校验
             if (FedDurationSeconds <= 0f) FedDurationSeconds = 600f;
+
+            // 区域密度参数校验
+            if (DensityRadius <= 0f) DensityRadius = 32f;
+            if (DensityLimit <= 0f) DensityLimit = 8f;
+            if (DensityPenaltyStep < 0f) DensityPenaltyStep = 0.15f;
+            if (DensityPenaltyStep > 1f) DensityPenaltyStep = 1f;
             FeedItem = string.IsNullOrEmpty(FeedItem) ? null : FeedItem.Trim();
             ParsedFeedBlockIndex = null;
             ParsedFeedBlockData = null;

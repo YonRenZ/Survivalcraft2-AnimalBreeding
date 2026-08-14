@@ -1027,8 +1027,9 @@ namespace Game
                 return;
             }
 
-            // 4. 累加相处计时
-            state.MatingProximitySeconds += dt;
+            // 4. 累加相处计时(受区域密度影响：同繁殖群个体越多，计时累加越慢 → 配对效率越低)
+            float densityFactor = GetDensityFactor(entity, species);
+            state.MatingProximitySeconds += dt * densityFactor;
 
             // 5. 相处时间达到阈值 → 交配
             if (state.MatingProximitySeconds >= species.MatingRequiredProximitySeconds)
@@ -1048,6 +1049,9 @@ namespace Game
                 }
 
                 Log.Information($"[Breeding] 配对成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
+
+                // 扩展接口事件：通知其他模组(疾病/草药系统等)
+                BreedingEvents.MatingSuccess?.Invoke(entity, mate);
             }
         }
 
@@ -1265,6 +1269,9 @@ namespace Game
                 ApplyBoxSizeByGrowth(cub, cubState, species, 0f);
             }
             Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
+
+            // 扩展接口事件：通知其他模组(疾病系统可在此时标记新生个体患病)
+            BreedingEvents.Birth?.Invoke(mother, cub);
         }
 
         /// <summary>
@@ -1381,6 +1388,9 @@ namespace Game
 
             // 喂食成功：设置已喂食状态
             state.FedRemainingSeconds = species.FedDurationSeconds;
+
+            // 扩展接口事件：通知其他模组(草药系统可在此识别"喂药/喂草"事件)
+            BreedingEvents.Fed?.Invoke(entity, species.FedDurationSeconds);
         }
 
         /// <summary>
@@ -1483,6 +1493,175 @@ namespace Game
         public static BreedingState GetState(Entity entity)
         {
             return entity != null && s_states.TryGetValue(entity, out BreedingState s) ? s : null;
+        }
+
+        // ==================== 区域密度因子(繁殖效率限制) ====================
+
+        /// <summary>
+        /// 计算区域繁殖密度因子(0~1)：区域内同繁殖群(含别名)成年个体越多，因子越低。
+        /// · 1.0 = 密度达标(个体数 ≤ DensityLimit，配对效率 100%)
+        /// · 0.x = 拥挤(每超 DensityLimit 一只，效率 -DensityPenaltyStep，最低 0)
+        /// 效率作用于母体"相处计时"累加速度，头顶"求偶中(相处N秒)"的 N 增长随之变慢。
+        /// 扩展接口：其他模组可调用此方法查询任意个体的密度压力(如疾病系统据此加额外惩罚)。
+        /// </summary>
+        public static float GetDensityFactor(Entity entity, SpeciesConfig species)
+        {
+            if (entity == null || species == null || !species.DensityEnabled) return 1f;
+
+            ComponentBody body = entity.FindComponent<ComponentBody>();
+            if (body == null) return 1f;
+            Vector3 pos = body.Position;
+            float radius = species.DensityRadius;
+
+            DynamicArray<ComponentBody> results = new();
+            s_bodies.FindBodiesAroundPoint(new Vector2(pos.X, pos.Z), radius, results);
+
+            int count = 0;
+            for (int i = 0; i < results.Count; i++)
+            {
+                Entity other = results.Array[i].Entity;
+                if (other == null || other == entity) continue;
+                if (!s_states.TryGetValue(other, out BreedingState otherState)) continue;
+                if (!otherState.IsAdult) continue;
+                if (!IsMatingCompatible(species, otherState.TemplateName)) continue; // 同繁殖群(含别名)
+                Vector3 otherPos = results.Array[i].Position;
+                if (Vector3.Distance(pos, otherPos) > radius) continue;
+                count++;
+            }
+
+            float excess = count - species.DensityLimit;
+            if (excess <= 0f) return 1f;
+            return Math.Clamp(1f - excess * species.DensityPenaltyStep, 0f, 1f);
+        }
+
+        // ==================== 模组扩展接口(供疾病/草药等第三方模组接入) ====================
+
+        // ---- 状态查询(只读) ----
+        // 其他模组引用本 DLL 后可直接调用；未引用 DLL 时可用反射调用同名静态方法。
+
+        /// <summary>查询实体繁殖状态；未追踪返回 null。(已公开)</summary>
+        // GetState 见上方
+
+        /// <summary>查询实体性别；无状态返回 null。</summary>
+        public static BreedingGender? GetGender(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null ? s.Gender : (BreedingGender?)null;
+        }
+
+        /// <summary>查询实体是否成年(幼崽期 false)。</summary>
+        public static bool IsAdult(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null && s.IsAdult;
+        }
+
+        /// <summary>查询实体是否处于求偶期(需喂食物种含已喂食判定)。</summary>
+        public static bool IsInEstrus(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null && s.IsInEstrus;
+        }
+
+        /// <summary>查询实体是否怀孕(母体孕期倒计时中)。</summary>
+        public static bool IsPregnant(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null && s.Gender == BreedingGender.Female && s.PregnancyRemainingSeconds > 0f;
+        }
+
+        /// <summary>查询实体是否处于恢复期(配对后/产仔后，期间不进入求偶)。</summary>
+        public static bool IsWeak(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null && s.IsWeak;
+        }
+
+        /// <summary>查询实体是否已喂食(条件性繁衍状态)。</summary>
+        public static bool IsFed(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            return s != null && s.IsFed;
+        }
+
+        /// <summary>查询实体成长进度(0~1，幼崽期线性增长，成年恒为 1)。</summary>
+        public static float GetGrowthProgress(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            if (s == null) return 1f;
+            BreedingConfig cfg = BreedingConfig.Current;
+            SpeciesConfig species = cfg?.GetSpecies(s.TemplateName);
+            if (species == null) return 1f;
+            return s.GetGrowthProgress(s_timeOfDay != null ? s_timeOfDay.Day : 0d, species.CubDurationDays);
+        }
+
+        // ---- 状态操作(供第三方模组调用，如疾病/草药系统) ----
+
+        /// <summary>设置母体怀孕(孕期秒数)。成功返回 true。疾病系统可用它模拟"异常孕期"。</summary>
+        public static bool SetPregnant(Entity entity, float gestationSeconds)
+        {
+            BreedingState s = GetState(entity);
+            if (s == null || s.Gender != BreedingGender.Female) return false;
+            s.PregnancyRemainingSeconds = Math.Max(0f, gestationSeconds);
+            s.MatingProximitySeconds = 0f;
+            BreedingEvents.StateChanged?.Invoke(entity, s);
+            return true;
+        }
+
+        /// <summary>设置恢复期(秒数)。疾病系统可用它让个体暂停求偶。</summary>
+        public static bool SetWeak(Entity entity, float seconds)
+        {
+            BreedingState s = GetState(entity);
+            if (s == null) return false;
+            s.WeaknessRemainingSeconds = Math.Max(0f, seconds);
+            BreedingEvents.StateChanged?.Invoke(entity, s);
+            return true;
+        }
+
+        /// <summary>设置已喂食状态(秒数)。草药系统可用它模拟"喂药后发情"。</summary>
+        public static bool SetFed(Entity entity, float seconds)
+        {
+            BreedingState s = GetState(entity);
+            if (s == null) return false;
+            s.FedRemainingSeconds = Math.Max(0f, seconds);
+            BreedingEvents.StateChanged?.Invoke(entity, s);
+            return true;
+        }
+
+        /// <summary>治愈/重置繁殖状态：清空孕期、恢复期、相处计时、已喂食。疾病系统"治愈"用。</summary>
+        public static bool CureBreedingState(Entity entity)
+        {
+            BreedingState s = GetState(entity);
+            if (s == null) return false;
+            s.PregnancyRemainingSeconds = -1f;
+            s.PregnancyFatherId = 0;
+            s.WeaknessRemainingSeconds = -1f;
+            s.MatingProximitySeconds = 0f;
+            s.FedRemainingSeconds = -1f;
+            BreedingEvents.StateChanged?.Invoke(entity, s);
+            return true;
+        }
+
+        /// <summary>
+        /// 繁殖系统事件(模组扩展接口)。
+        /// 其他模组直接订阅静态事件即可拓展玩法：
+        ///   疾病系统：监听 Birth(新生个体标记患病)、MatingSuccess(患病个体抑制繁殖)
+        ///   草药系统：监听 Fed(喂食草药的个体获得增益/喂食事件)
+        /// 注意：事件仅在游戏运行时触发；订阅者请自行处理线程与生命周期。
+        /// </summary>
+        public static class BreedingEvents
+        {
+            /// <summary>配对成功(motherEntity, fatherEntity)。</summary>
+            public static event Action<Entity, Entity> MatingSuccess;
+
+            /// <summary>产仔成功(motherEntity, cubEntity)。</summary>
+            public static event Action<Entity, Entity> Birth;
+
+            /// <summary>个体被喂食触发求偶(entity, fedSeconds)。</summary>
+            public static event Action<Entity, float> Fed;
+
+            /// <summary>繁殖状态被 API 操作修改(entity, state)。</summary>
+            public static event Action<Entity, BreedingState> StateChanged;
         }
     }
 

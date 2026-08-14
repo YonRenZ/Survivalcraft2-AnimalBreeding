@@ -58,6 +58,18 @@
       "CubMaleProbability": 0.5,
       "_CubMaleProbability": "幼崽/自然生成个体的公体概率(0~1)。0=全母，1=全公，0.5=各半。",
 
+      "DensityEnabled": true,
+      "_DensityEnabled": "区域繁殖密度限制开关。true=区域内同繁殖群个体越多、配对效率越低(防无限繁殖)。",
+
+      "DensityRadius": 32.0,
+      "_DensityRadius": "密度统计半径(方块)。以母体为中心统计此半径内同繁殖群(含别名)的成年个体数。",
+
+      "DensityLimit": 8.0,
+      "_DensityLimit": "区域理想上限。同繁殖群个体数不超过此值时配对效率 100%。",
+
+      "DensityPenaltyStep": 0.15,
+      "_DensityPenaltyStep": "超过上限后每多一只的效率降低量(0~1)。例: 0.15=每多一只配对效率-15%，降到0封底。效率作用于母体'相处计时'累加速度，头顶'求偶中(相处N秒)'的N增长随之变慢。",
+
       "RequireFeeding": false,
       "_RequireFeeding": "条件性繁衍开关。false=繁殖季节到即自动发情(灰狼当前配置)；true=还需玩家喂食 FeedItem 指定物品后才发情。",
 
