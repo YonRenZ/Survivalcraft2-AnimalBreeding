@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Xml.Linq;
 using Engine;
 using Engine.Graphics;
@@ -302,9 +302,9 @@ namespace Game
 
             // 进度条四角(视图空间)：barOrigin 为左上角预期位置，朝相机偏置 zBias
             Vector3 topLeft = barOrigin + Vector3.UnitZ * zBias;
-            Vector3 topRgt  = topLeft + right * barWidth;
+            Vector3 topRgt = topLeft + right * barWidth;
             Vector3 botLeft = topLeft + down * barHeight;
-            Vector3 botRgt  = topRgt  + down * barHeight;
+            Vector3 botRgt = topRgt + down * barHeight;
 
             // 1. 背景填充矩形(灰半透明，固定大小)
             Color bgColor = new Color(40, 40, 40, 180) * baseColor;
