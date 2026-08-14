@@ -130,7 +130,14 @@ namespace Game
             }
 
             // 2. 动态基础信息(攻击力/体型/时间，从配置读取，多语言标签)
+            // 注意：图鉴可在主菜单(未进入世界)打开，此时 BreedingConfig.Current 为 null，
+            // 需主动加载配置，否则 Stats 无法生成。
             BreedingConfig cfg = BreedingConfig.Current;
+            if (cfg == null)
+            {
+                BreedingConfig.Load();
+                cfg = BreedingConfig.Current;
+            }
             SpeciesConfig species = cfg?.GetSpecies(templateName);
             if (species != null)
             {
