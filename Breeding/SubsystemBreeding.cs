@@ -1241,6 +1241,13 @@ namespace Game
                 return;
             }
 
+            // 联机版无 OnEntityAdd 钩子即时同步(SyncEntities 每帧全量，滞后一帧)，
+            // 这里立即注册幼崽状态，否则 s_states 查不到 → 幼崽直接按成年处理。
+            if (!s_states.ContainsKey(cub))
+            {
+                OnEntityAdd(cub);
+            }
+
             // 修正幼崽的繁殖状态(OnEntityAdd 已按"自然生成成体"初始化，需覆盖)
             if (s_states.TryGetValue(cub, out BreedingState cubState))
             {
