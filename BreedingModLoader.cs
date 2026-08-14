@@ -196,11 +196,29 @@ namespace Game
                 if (string.IsNullOrEmpty(templateName)) return;
 
                 string text = BuildBestiaryText(templateName);
+
+                // 诊断日志：确认钩子触发与内容构建结果(排查用，正式版可删)
+                Log.Information($"[Breeding] 图鉴详情钩子触发: template={templateName}, textLen={(text?.Length ?? 0)}, text=[{text}]");
+
                 if (string.IsNullOrEmpty(text)) return;
 
-                // 详情页 Description 标签(介绍 + Stats)
+                // 1. 详情页 Description 标签(介绍 + Stats)
                 LabelWidget description = bestiaryDescriptionScreen.Children.Find<LabelWidget>("Description");
-                if (description != null) description.Text = text;
+                if (description != null)
+                {
+                    description.Text = text;
+                    Log.Information($"[Breeding] 图鉴详情 Description 标签已更新: template={templateName}");
+                }
+                else
+                {
+                    Log.Warning("[Breeding] 图鉴详情未找到 Description 标签");
+                }
+
+                // 2. 兜底：同时更新 BestiaryCreatureInfo.Description(详情页 71 行直接读它)
+                if (bestiaryCreatureInfo != null)
+                {
+                    bestiaryCreatureInfo.Description = text;
+                }
             }
             catch (Exception e)
             {
