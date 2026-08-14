@@ -1075,7 +1075,7 @@ namespace Game
                     maleState.TargetFemaleId = 0;
                 }
 
-                Log.Information($"[Breeding] 交配成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
+                Log.Information($"[Breeding] 配对成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
             }
         }
 
@@ -1287,7 +1287,7 @@ namespace Game
                 // 立即应用幼崽体型(成长度=0 → CubBoxScale)
                 ApplyBoxSizeByGrowth(cub, cubState, species, 0f);
             }
-            Log.Information($"[Breeding] 分娩成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
+            Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
         }
 
         /// <summary>
