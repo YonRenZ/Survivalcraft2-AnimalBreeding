@@ -4,6 +4,7 @@ using Engine;
 using Engine.Graphics;
 using Engine.Media;
 using GameEntitySystem;
+using TemplatesDatabase;
 using Game;
 
 namespace Game
@@ -38,6 +39,7 @@ namespace Game
             ModsManager.RegisterHook("OnModelDrawExtra", this);
             ModsManager.RegisterHook("ScoreMount", this);
             ModsManager.RegisterHook("OnEatPickable", this);
+            ModsManager.RegisterHook("LoadCreatureInfoInBestiaryScreen", this);
 
             Log.Information("[BreedingMod] 动物繁殖系统模组初始化(含 OnModelDrawExtra 渲染钩子 + OnEatPickable 喂食钩子)");
         }
@@ -107,6 +109,69 @@ namespace Game
         public override void OnSaveSpawnData(ComponentSpawn spawn, SpawnEntityData spawnEntityData)
         {
             SubsystemBreeding.OnSaveSpawnData(spawn, spawnEntityData);
+        }
+
+        // ==================== 图鉴生物介绍(LoadCreatureInfoInBestiaryScreen) ====================
+
+        /// <summary>
+        /// 图鉴界面(Bestiary)加载每个生物条目时触发：显示模组生物介绍 + 动态基础信息。
+        /// · 介绍文案：MOD/Assets/Lang/{语言}.json 的 BreedingMod.SpeciesDescription.{模板名}
+        ///   (zh-CN 中文 / en-US 英文，其他语言自动回退英文；找不到则保留原版描述)
+        /// · 基础信息：从 BreedingConfig.json 实时读取攻击力/体型/孕期/成长期/恢复期，
+        ///   标签走多语言(BreedingMod.Stats)，配置改动后图鉴自动同步。
+        /// </summary>
+        public override void LoadCreatureInfoInBestiaryScreen(BestiaryScreen bestiaryScreen,
+            ContainerWidget creatureInfoWidget,
+            BestiaryCreatureInfo bestiaryCreatureInfo,
+            ValuesDictionary entityValuesDictionary)
+        {
+            try
+            {
+                if (creatureInfoWidget == null || entityValuesDictionary == null) return;
+
+                string templateName = entityValuesDictionary.DatabaseObject?.Name;
+                if (string.IsNullOrEmpty(templateName)) return;
+
+                System.Text.StringBuilder sb = new();
+
+                // 1. 模组生物介绍(zh-CN 中文 / en-US 英文，其他语言回退英文；缺失则跳过)
+                string intro = LanguageControl.Get(out bool foundIntro, "BreedingMod", "SpeciesDescription", templateName);
+                if (foundIntro && !string.IsNullOrEmpty(intro))
+                {
+                    sb.Append(intro);
+                }
+
+                // 2. 动态基础信息(攻击力/体型/时间，从配置读取，多语言标签)
+                BreedingConfig cfg = BreedingConfig.Current;
+                SpeciesConfig species = cfg?.GetSpecies(templateName);
+                if (species != null)
+                {
+                    if (sb.Length > 0) sb.AppendLine();
+                    sb.AppendLine(string.Format(
+                        LanguageControl.Get("BreedingMod", "Stats", "Attack"),
+                        (species.AdultAttackFactor * species.MaleAttackBonus).ToString("0.##"),
+                        (species.AdultAttackFactor * 1.0).ToString("0.##")));
+                    sb.AppendLine(string.Format(
+                        LanguageControl.Get("BreedingMod", "Stats", "Size"),
+                        species.AdultMaleBoxScale.ToString("0.##"),
+                        species.AdultFemaleBoxScale.ToString("0.##")));
+                    sb.AppendLine(string.Format(
+                        LanguageControl.Get("BreedingMod", "Stats", "Time"),
+                        (species.GestationSeconds / 1200f).ToString("0.##"),
+                        species.CubDurationDays.ToString("0.##"),
+                        (species.WeaknessSeconds / 1200f).ToString("0.##")));
+                }
+
+                if (sb.Length == 0) return; // 无介绍也无配置 → 保留原版描述
+
+                LabelWidget details = creatureInfoWidget.Children.Find<LabelWidget>("BestiaryItem.Details");
+                if (details == null) return;
+                details.Text = sb.ToString();
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] 图鉴生物介绍加载失败: " + e.Message);
+            }
         }
 
 #pragma warning disable CS0618

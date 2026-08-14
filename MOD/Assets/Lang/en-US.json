@@ -17,6 +17,54 @@
       "NotInSeason": "Off-season",
       "Growing": "Growing"
     },
-    "Growth": "Growth {0}%"
+    "Growth": "Growth {0}%",
+
+    "Stats": {
+      "Attack": "Attack: Male {0}x / Female {1}x",
+      "Size": "Size: Male {0}x / Female {1}x",
+      "Time": "Gestation: {0}d  Growth: {1}d  Recovery: {2}d"
+    },
+
+    "SpeciesDescription": {
+      "Wolf_Gray": "Gray wolf: pack predator, courts in winter, no feeding required, aggressive during courtship.",
+      "Wolf_Coyote": "Coyote: small predator, courts in winter, no feeding required, smaller than the gray wolf.",
+      "Hyena": "Hyena: pack scavenger predator, courts in spring, no feeding required.",
+      "Lion": "Lion: apex pack predator, courts in summer, no feeding required, very high attack power.",
+      "Tiger": "Tiger: solitary apex predator, courts in autumn, no feeding required, very high attack power.",
+      "Tiger_White": "White tiger: rare tiger variant, courts in autumn, no feeding required.",
+      "Leopard": "Leopard: agile predator, courts in autumn, no feeding required.",
+      "Jaguar": "Jaguar: tropical predator, courts in summer, no feeding required.",
+      "Bear": "Grizzly bear: large omnivorous predator, courts in summer, no feeding required, high attack power.",
+      "Bear_Brown": "Brown bear: large omnivorous predator, courts in summer, no feeding required, similar to the grizzly.",
+      "Bear_Black": "Black bear: medium omnivorous predator, courts in summer, no feeding required, smaller than the brown bear.",
+      "Bear_Polar": "Polar bear: large arctic predator, courts in winter, no feeding required, extremely high attack power.",
+      "Horse_Black": "Black horse: gentle herbivorous mount, courts in spring, feed tall grass, stallions fight over mares.",
+      "Horse_Bay": "Bay horse: gentle herbivorous mount, courts in spring, feed tall grass, stallions fight over mares.",
+      "Horse_Chestnut": "Chestnut horse: gentle herbivorous mount, courts in spring, feed tall grass, stallions fight over mares.",
+      "Horse_Palomino": "Palomino horse: gentle herbivorous mount, courts in spring, feed tall grass, stallions fight over mares.",
+      "Horse_White": "White horse: gentle herbivorous mount, courts in spring, feed tall grass, stallions fight over mares.",
+      "Donkey": "Donkey: herbivorous animal, can be saddled and ridden, courts in spring, feed tall grass.",
+      "Camel": "Camel: herbivorous mount, courts in summer, feed tall grass, longer gestation.",
+      "Reindeer": "Reindeer: arctic herbivorous mount, courts in winter, feed tall grass.",
+      "Ostrich": "Ostrich: tropical herbivorous mount, courts in spring, feed pumpkin, breeds quickly.",
+      "Cassowary": "Cassowary: large flightless bird, courts in summer, no feeding required, aggressive.",
+      "Cow": "Cow: livestock, courts in spring and summer, feed tall grass, can breed with bulls.",
+      "Bull": "Bull: livestock, courts in spring and summer, feed tall grass, can breed with cows.",
+      "Cow_Black": "Black cow: livestock variant, courts in spring and summer, no feeding required, breeds with any bull color.",
+      "Cow_Brown": "Brown cow: livestock variant, courts in spring and summer, no feeding required, breeds with any bull color.",
+      "Bull_Brown": "Brown bull: livestock variant, courts in spring and summer, no feeding required, breeds with cows.",
+      "Bull_Black": "Black bull: livestock variant, courts in spring and summer, no feeding required, breeds with cows.",
+      "Bull_White": "White bull: livestock variant, courts in spring and summer, no feeding required, breeds with cows.",
+      "Alpaca": "Alpaca: gentle herbivore, courts in spring and autumn, feed tall grass, can be sheared.",
+      "Alpaca_Shorn": "Shorn alpaca: variant after shearing, courts in spring and autumn, no feeding required.",
+      "Alpaca_White": "White alpaca: alpaca variant, courts in spring and autumn, no feeding required.",
+      "Gnu": "Gnu: herd herbivore, courts in autumn, feed tall grass.",
+      "Bison": "Bison: large herbivore, courts in autumn, feed tall grass, moderately aggressive.",
+      "Moose": "Moose: large arctic herbivore, courts in autumn, no feeding required, bulls are larger.",
+      "Rhino": "Rhino: large herbivore, courts in summer, no feeding required, aggressive.",
+      "Giraffe": "Giraffe: very large herbivore, courts in summer, no feeding required, longer gestation.",
+      "Zebra": "Zebra: herd herbivore, courts in spring, no feeding required, wary.",
+      "Wildboar": "Wildboar: omnivorous medium animal, courts in autumn, no feeding required."
+    }
   }
 }

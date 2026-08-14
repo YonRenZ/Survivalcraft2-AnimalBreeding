@@ -1051,7 +1051,7 @@ namespace Game
                 Log.Information($"[Breeding] 配对成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
 
                 // 扩展接口事件：通知其他模组(疾病/草药系统等)
-                BreedingEvents.MatingSuccess?.Invoke(entity, mate);
+                BreedingEvents.RaiseMatingSuccess(entity, mate);
             }
         }
 
@@ -1271,7 +1271,7 @@ namespace Game
             Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
 
             // 扩展接口事件：通知其他模组(疾病系统可在此时标记新生个体患病)
-            BreedingEvents.Birth?.Invoke(mother, cub);
+            BreedingEvents.RaiseBirth(mother, cub);
         }
 
         /// <summary>
@@ -1390,7 +1390,7 @@ namespace Game
             state.FedRemainingSeconds = species.FedDurationSeconds;
 
             // 扩展接口事件：通知其他模组(草药系统可在此识别"喂药/喂草"事件)
-            BreedingEvents.Fed?.Invoke(entity, species.FedDurationSeconds);
+            BreedingEvents.RaiseFed(entity, species.FedDurationSeconds);
         }
 
         /// <summary>
@@ -1604,7 +1604,7 @@ namespace Game
             if (s == null || s.Gender != BreedingGender.Female) return false;
             s.PregnancyRemainingSeconds = Math.Max(0f, gestationSeconds);
             s.MatingProximitySeconds = 0f;
-            BreedingEvents.StateChanged?.Invoke(entity, s);
+            BreedingEvents.RaiseStateChanged(entity, s);
             return true;
         }
 
@@ -1614,7 +1614,7 @@ namespace Game
             BreedingState s = GetState(entity);
             if (s == null) return false;
             s.WeaknessRemainingSeconds = Math.Max(0f, seconds);
-            BreedingEvents.StateChanged?.Invoke(entity, s);
+            BreedingEvents.RaiseStateChanged(entity, s);
             return true;
         }
 
@@ -1624,7 +1624,7 @@ namespace Game
             BreedingState s = GetState(entity);
             if (s == null) return false;
             s.FedRemainingSeconds = Math.Max(0f, seconds);
-            BreedingEvents.StateChanged?.Invoke(entity, s);
+            BreedingEvents.RaiseStateChanged(entity, s);
             return true;
         }
 
@@ -1638,7 +1638,7 @@ namespace Game
             s.WeaknessRemainingSeconds = -1f;
             s.MatingProximitySeconds = 0f;
             s.FedRemainingSeconds = -1f;
-            BreedingEvents.StateChanged?.Invoke(entity, s);
+            BreedingEvents.RaiseStateChanged(entity, s);
             return true;
         }
 
@@ -1648,6 +1648,7 @@ namespace Game
         ///   疾病系统：监听 Birth(新生个体标记患病)、MatingSuccess(患病个体抑制繁殖)
         ///   草药系统：监听 Fed(喂食草药的个体获得增益/喂食事件)
         /// 注意：事件仅在游戏运行时触发；订阅者请自行处理线程与生命周期。
+        /// 外部模组只应 += / -= 订阅事件，不得直接触发；触发由本模组通过 Raise* 方法完成。
         /// </summary>
         public static class BreedingEvents
         {
@@ -1662,6 +1663,16 @@ namespace Game
 
             /// <summary>繁殖状态被 API 操作修改(entity, state)。</summary>
             public static event Action<Entity, BreedingState> StateChanged;
+
+            // ---- 触发方法(仅本模组内部调用；外部模组只订阅，不触发) ----
+
+            public static void RaiseMatingSuccess(Entity mother, Entity father) => MatingSuccess?.Invoke(mother, father);
+
+            public static void RaiseBirth(Entity mother, Entity cub) => Birth?.Invoke(mother, cub);
+
+            public static void RaiseFed(Entity entity, float fedSeconds) => Fed?.Invoke(entity, fedSeconds);
+
+            public static void RaiseStateChanged(Entity entity, BreedingState state) => StateChanged?.Invoke(entity, state);
         }
     }
 

@@ -137,6 +137,25 @@
 
 > 注意：扩展配置的 `Enabled` 字段始终被忽略（防止第三方关闭整个系统）；`OverrideMain` 只在扩展配置中生效。
 
+### 3.3 自定义生物介绍（图鉴显示）
+
+图鉴界面（Bestiary）中每个生物条目会触发官方钩子 `LoadCreatureInfoInBestiaryScreen`，本模组用它把 `Lang/{语言}.json` 的 `BreedingMod.SpeciesDescription.{模板名}` 显示为生物介绍（替换原版 Description）。
+
+- 本模组已在 `zh-CN.json` 内置 39 种生物介绍；
+- 第三方模组可自定义/补充介绍：
+
+```jsonc
+{
+  "BreedingMod": {
+    "SpeciesDescription": {
+      "MyNewCreature": "我的新生物：夜行掠食者，秋季求偶，需喂食生肉。"
+    }
+  }
+}
+```
+
+> 找不到介绍键（如其他语言）时自动保留原版描述，不影响游戏。
+
 ---
 
 ## 四、拓展示例

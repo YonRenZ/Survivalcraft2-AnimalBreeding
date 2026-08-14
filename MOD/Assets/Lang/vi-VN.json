@@ -17,6 +17,54 @@
       "NotInSeason": "Ngoài mùa",
       "Growing": "Đang lớn"
     },
-    "Growth": "Tăng trưởng {0}%"
+    "Growth": "Tăng trưởng {0}%",
+
+    "Stats": {
+      "Attack": "Tấn công: Đực {0}x / Cái {1}x",
+      "Size": "Kích thước: Đực {0}x / Cái {1}x",
+      "Time": "Mang thai: {0}ngày  Tăng trưởng: {1}ngày  Hồi phục: {2}ngày"
+    },
+
+    "SpeciesDescription": {
+      "Wolf_Gray": "Sói xám: động vật săn mồi theo bầy, ve vãn vào mùa đông, không cần cho ăn, hung dữ khi ve vãn.",
+      "Wolf_Coyote": "Sói đồng cỏ: động vật săn mồi nhỏ, ve vãn vào mùa đông, không cần cho ăn, nhỏ hơn sói xám.",
+      "Hyena": "Linh cẩu: động vật săn mồi ăn xác theo bầy, ve vãn vào mùa xuân, không cần cho ăn.",
+      "Lion": "Sư tử: động vật săn mồi đỉnh cao theo bầy, ve vãn vào mùa hè, không cần cho ăn, sức tấn công rất cao.",
+      "Tiger": "Hổ: động vật săn mồi đỉnh cao đơn độc, ve vãn vào mùa thu, không cần cho ăn, sức tấn công rất cao.",
+      "Tiger_White": "Hổ trắng: biến thể hiếm của hổ, ve vãn vào mùa thu, không cần cho ăn.",
+      "Leopard": "Báo hoa mai: động vật săn mồi nhanh nhẹn, ve vãn vào mùa thu, không cần cho ăn.",
+      "Jaguar": "Báo đốm: động vật săn mồi nhiệt đới, ve vãn vào mùa hè, không cần cho ăn.",
+      "Bear": "Gấu xám: động vật ăn tạp lớn, ve vãn vào mùa hè, không cần cho ăn, sức tấn công cao.",
+      "Bear_Brown": "Gấu nâu: động vật ăn tạp lớn, ve vãn vào mùa hè, không cần cho ăn, giống gấu xám.",
+      "Bear_Black": "Gấu đen: động vật ăn tạp cỡ trung, ve vãn vào mùa hè, không cần cho ăn, nhỏ hơn gấu nâu.",
+      "Bear_Polar": "Gấu Bắc Cực: động vật săn mồi lớn vùng cực, ve vãn vào mùa đông, không cần cho ăn, sức tấn công cực cao.",
+      "Horse_Black": "Ngựa đen: thú cưỡi hiền lành ăn cỏ, ve vãn vào mùa xuân, cho ăn cỏ cao, ngựa đực tranh giành ngựa cái.",
+      "Horse_Bay": "Ngựa hồng: thú cưỡi hiền lành ăn cỏ, ve vãn vào mùa xuân, cho ăn cỏ cao, ngựa đực tranh giành ngựa cái.",
+      "Horse_Chestnut": "Ngựa hạt dẻ: thú cưỡi hiền lành ăn cỏ, ve vãn vào mùa xuân, cho ăn cỏ cao, ngựa đực tranh giành ngựa cái.",
+      "Horse_Palomino": "Ngựa palomino: thú cưỡi hiền lành ăn cỏ, ve vãn vào mùa xuân, cho ăn cỏ cao, ngựa đực tranh giành ngựa cái.",
+      "Horse_White": "Ngựa trắng: thú cưỡi hiền lành ăn cỏ, ve vãn vào mùa xuân, cho ăn cỏ cao, ngựa đực tranh giành ngựa cái.",
+      "Donkey": "Lừa: động vật ăn cỏ, có thể thắng yên và cưỡi, ve vãn vào mùa xuân, cho ăn cỏ cao.",
+      "Camel": "Lạc đà: thú cưỡi ăn cỏ, ve vãn vào mùa hè, cho ăn cỏ cao, thời gian mang thai dài hơn.",
+      "Reindeer": "Tuần lộc: thú cưỡi ăn cỏ vùng cực, ve vãn vào mùa đông, cho ăn cỏ cao.",
+      "Ostrich": "Đà điểu: thú cưỡi ăn cỏ nhiệt đới, ve vãn vào mùa xuân, cho ăn bí ngô, sinh sản nhanh.",
+      "Cassowary": "Đà điểu đầu mào: loài chim lớn không bay, ve vãn vào mùa hè, không cần cho ăn, hung dữ.",
+      "Cow": "Bò cái: gia súc, ve vãn vào mùa xuân và mùa hè, cho ăn cỏ cao, có thể phối giống với bò đực.",
+      "Bull": "Bò đực: gia súc, ve vãn vào mùa xuân và mùa hè, cho ăn cỏ cao, có thể phối giống với bò cái.",
+      "Cow_Black": "Bò cái đen: biến thể gia súc, ve vãn vào mùa xuân và mùa hè, không cần cho ăn, phối với mọi bò đực.",
+      "Cow_Brown": "Bò cái nâu: biến thể gia súc, ve vãn vào mùa xuân và mùa hè, không cần cho ăn, phối với mọi bò đực.",
+      "Bull_Brown": "Bò đực nâu: biến thể gia súc, ve vãn vào mùa xuân và mùa hè, không cần cho ăn, phối với bò cái.",
+      "Bull_Black": "Bò đực đen: biến thể gia súc, ve vãn vào mùa xuân và mùa hè, không cần cho ăn, phối với bò cái.",
+      "Bull_White": "Bò đực trắng: biến thể gia súc, ve vãn vào mùa xuân và mùa hè, không cần cho ăn, phối với bò cái.",
+      "Alpaca": "Lạc đà không bướu: động vật ăn cỏ hiền lành, ve vãn vào mùa xuân và mùa thu, cho ăn cỏ cao, có thể cắt lông.",
+      "Alpaca_Shorn": "Lạc đà không bướu đã cắt lông: biến thể sau khi cắt, ve vãn vào mùa xuân và mùa thu, không cần cho ăn.",
+      "Alpaca_White": "Lạc đà không bướu trắng: biến thể của lạc đà không bướu, ve vãn vào mùa xuân và mùa thu, không cần cho ăn.",
+      "Gnu": "Linh dương đầu bò: động vật ăn cỏ theo bầy, ve vãn vào mùa thu, cho ăn cỏ cao.",
+      "Bison": "Bò rừng bizon: động vật ăn cỏ lớn, ve vãn vào mùa thu, cho ăn cỏ cao, hung dữ vừa phải.",
+      "Moose": "Nai sừng tấm: động vật ăn cỏ lớn vùng cực, ve vãn vào mùa thu, không cần cho ăn, con đực lớn hơn.",
+      "Rhino": "Tê giác: động vật ăn cỏ lớn, ve vãn vào mùa hè, không cần cho ăn, hung dữ.",
+      "Giraffe": "Hươu cao cổ: động vật ăn cỏ rất lớn, ve vãn vào mùa hè, không cần cho ăn, thời gian mang thai dài hơn.",
+      "Zebra": "Ngựa vằn: động vật ăn cỏ theo bầy, ve vãn vào mùa xuân, không cần cho ăn, cảnh giác.",
+      "Wildboar": "Lợn rừng: động vật ăn tạp cỡ trung, ve vãn vào mùa thu, không cần cho ăn."
+    }
   }
 }

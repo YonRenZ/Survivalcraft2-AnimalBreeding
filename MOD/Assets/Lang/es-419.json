@@ -17,6 +17,54 @@
       "NotInSeason": "Fuera de temporada",
       "Growing": "Creciendo"
     },
-    "Growth": "Crecimiento {0}%"
+    "Growth": "Crecimiento {0}%",
+
+    "Stats": {
+      "Attack": "Ataque: Macho {0}x / Hembra {1}x",
+      "Size": "Tamaño: Macho {0}x / Hembra {1}x",
+      "Time": "Gestación: {0}d  Crecimiento: {1}d  Recuperación: {2}d"
+    },
+
+    "SpeciesDescription": {
+      "Wolf_Gray": "Lobo gris: depredador en manada, corteja en invierno, sin necesidad de alimentar, agresivo durante el cortejo.",
+      "Wolf_Coyote": "Coyote: depredador pequeño, corteja en invierno, sin necesidad de alimentar, más pequeño que el lobo gris.",
+      "Hyena": "Hiena: depredador carroñero en manada, corteja en primavera, sin necesidad de alimentar.",
+      "Lion": "León: depredador superior en manada, corteja en verano, sin necesidad de alimentar, poder de ataque muy alto.",
+      "Tiger": "Tigre: depredador superior solitario, corteja en otoño, sin necesidad de alimentar, poder de ataque muy alto.",
+      "Tiger_White": "Tigre blanco: variante rara del tigre, corteja en otoño, sin necesidad de alimentar.",
+      "Leopard": "Leopardo: depredador ágil, corteja en otoño, sin necesidad de alimentar.",
+      "Jaguar": "Jaguar: depredador tropical, corteja en verano, sin necesidad de alimentar.",
+      "Bear": "Oso pardo: gran depredador omnívoro, corteja en verano, sin necesidad de alimentar, poder de ataque alto.",
+      "Bear_Brown": "Oso pardo: gran depredador omnívoro, corteja en verano, sin necesidad de alimentar, similar al oso pardo.",
+      "Bear_Black": "Oso negro: depredador omnívoro mediano, corteja en verano, sin necesidad de alimentar, más pequeño que el oso pardo.",
+      "Bear_Polar": "Oso polar: gran depredador ártico, corteja en invierno, sin necesidad de alimentar, poder de ataque extremo.",
+      "Horse_Black": "Caballo negro: montura herbívora dócil, corteja en primavera, alimentar con hierba alta, los sementales pelean por las yeguas.",
+      "Horse_Bay": "Caballo bayo: montura herbívora dócil, corteja en primavera, alimentar con hierba alta, los sementales pelean por las yeguas.",
+      "Horse_Chestnut": "Caballo castaño: montura herbívora dócil, corteja en primavera, alimentar con hierba alta, los sementales pelean por las yeguas.",
+      "Horse_Palomino": "Caballo palomino: montura herbívora dócil, corteja en primavera, alimentar con hierba alta, los sementales pelean por las yeguas.",
+      "Horse_White": "Caballo blanco: montura herbívora dócil, corteja en primavera, alimentar con hierba alta, los sementales pelean por las yeguas.",
+      "Donkey": "Burro: animal herbívoro, se puede ensillar y montar, corteja en primavera, alimentar con hierba alta.",
+      "Camel": "Camello: montura herbívora, corteja en verano, alimentar con hierba alta, gestación más larga.",
+      "Reindeer": "Reno: montura herbívora ártica, corteja en invierno, alimentar con hierba alta.",
+      "Ostrich": "Avestruz: montura herbívora tropical, corteja en primavera, alimentar con calabaza, se reproduce rápido.",
+      "Cassowary": "Casuario: gran ave no voladora, corteja en verano, sin necesidad de alimentar, agresivo.",
+      "Cow": "Vaca: ganado, corteja en primavera y verano, alimentar con hierba alta, puede criar con toros.",
+      "Bull": "Toro: ganado, corteja en primavera y verano, alimentar con hierba alta, puede criar con vacas.",
+      "Cow_Black": "Vaca negra: variante de ganado, corteja en primavera y verano, sin necesidad de alimentar, cría con cualquier toro.",
+      "Cow_Brown": "Vaca marrón: variante de ganado, corteja en primavera y verano, sin necesidad de alimentar, cría con cualquier toro.",
+      "Bull_Brown": "Toro marrón: variante de ganado, corteja en primavera y verano, sin necesidad de alimentar, cría con vacas.",
+      "Bull_Black": "Toro negro: variante de ganado, corteja en primavera y verano, sin necesidad de alimentar, cría con vacas.",
+      "Bull_White": "Toro blanco: variante de ganado, corteja en primavera y verano, sin necesidad de alimentar, cría con vacas.",
+      "Alpaca": "Alpaca: herbívora dócil, corteja en primavera y otoño, alimentar con hierba alta, se puede esquilar.",
+      "Alpaca_Shorn": "Alpaca esquilada: variante tras esquilar, corteja en primavera y otoño, sin necesidad de alimentar.",
+      "Alpaca_White": "Alpaca blanca: variante de alpaca, corteja en primavera y otoño, sin necesidad de alimentar.",
+      "Gnu": "Ñu: herbívoro en manada, corteja en otoño, alimentar con hierba alta.",
+      "Bison": "Bisonte: gran herbívoro, corteja en otoño, alimentar con hierba alta, moderadamente agresivo.",
+      "Moose": "Alce: gran herbívoro ártico, corteja en otoño, sin necesidad de alimentar, los machos son más grandes.",
+      "Rhino": "Rinoceronte: gran herbívoro, corteja en verano, sin necesidad de alimentar, agresivo.",
+      "Giraffe": "Jirafa: herbívoro muy grande, corteja en verano, sin necesidad de alimentar, gestación más larga.",
+      "Zebra": "Cebra: herbívoro en manada, corteja en primavera, sin necesidad de alimentar, cautelosa.",
+      "Wildboar": "Jabalí: animal omnívoro mediano, corteja en otoño, sin necesidad de alimentar."
+    }
   }
 }
