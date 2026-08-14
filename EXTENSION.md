@@ -137,6 +137,23 @@
 
 > 注意：扩展配置的 `Enabled` 字段始终被忽略（防止第三方关闭整个系统）；`OverrideMain` 只在扩展配置中生效。
 
+### 3.3 自定义生物显示名（i18n）
+
+悬浮文字第 1 行显示"性别 + 生物名"，生物名**优先取模组 i18n**：`Lang/{语言}.json` 的 `BreedingMod.Species.{模板名}`，找不到则回退原版 `creature.DisplayName`。
+
+- 本模组已在 `zh-CN.json` 内置 39 种生物中文名（与 SPECIES.md 一致）；
+- 第三方模组若需自定义/补充显示名，可在自己的 `MOD/Assets/Lang/` 下放同名键（或修改本模组语言文件）：
+
+```jsonc
+{
+  "BreedingMod": {
+    "Species": {
+      "MyNewCreature": "我的新生物"
+    }
+  }
+}
+```
+
 ---
 
 ## 四、拓展示例

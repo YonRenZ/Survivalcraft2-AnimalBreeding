@@ -223,7 +223,14 @@ namespace Game
                 SamplerState.LinearClamp);
 
             // ==================== 第1行：性别 + 生物名称 ====================
-            string line1 = state.GetGenderDisplayName() + " " + creature.DisplayName;
+            // 生物名优先取模组 i18n(zh-CN 提供 39 种生物中文名，与 SPECIES.md 一致)；
+            // 其他语言未提供时回退原版 creature.DisplayName，保证多语言兼容。
+            string speciesName = LanguageControl.Get(out bool foundName, "BreedingMod", "Species", state.TemplateName);
+            if (!foundName || string.IsNullOrEmpty(speciesName))
+            {
+                speciesName = creature.DisplayName;
+            }
+            string line1 = state.GetGenderDisplayName() + " " + speciesName;
             fontBatch.QueueText(line1, vector, right, down, color, TextAnchor.HorizontalCenter | TextAnchor.Bottom);
 
             // ==================== 第2行：成长阶段 + 繁殖状态 ====================
