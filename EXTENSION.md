@@ -81,27 +81,61 @@
 
 ---
 
-## 三、配置扩展（第三方加物种/调参数）
+## 三、配置扩展（第三方加物种/调参数/覆盖原版属性）
 
 本模组支持**多源配置合并**：其他模组只需在自己的 `MOD/Assets/` 下放一份 `BreedingConfig.{你的ModId}.json`，即可：
 
-- **追加新物种**的繁殖配置（同名模板主配置优先）；
-- **覆盖已有物种**的部分参数（主配置优先，无法覆盖主配置中的同名物种——如需覆盖请在本模组配置中修改）。
+- **追加新物种**的繁殖配置（默认行为）；
+- **覆盖主配置已有物种**（提高原版属性）：在扩展配置根上开启 `"OverrideMain": true`。
+
+### 3.1 追加新物种（默认）
 
 示例（疾病模组的配置文件 `BreedingConfig.DiseaseMod.json`）：
 
 ```jsonc
 {
   "Species": {
-    "Wolf_Gray": {                    // 为本模组灰狼追加"更低的密度上限"
-      "DensityLimit": 4,
-      "DensityPenaltyStep": 0.25
+    "MyNewCreature": {          // 追加你自己的新物种
+      "BreedingSeasons": [ "Summer" ],
+      "GestationSeconds": 2400.0,
+      "CubDurationDays": 6,
+      "DensityLimit": 4
     }
   }
 }
 ```
 
-> 注意：扩展配置的 `Enabled` 字段被忽略（防止第三方关闭整个系统）；同名模板冲突时主配置优先。
+### 3.2 覆盖主配置（OverrideMain=true，提高原版属性）
+
+开启后，本扩展中与主配置**同名**的物种执行**字段级覆盖**：显式写了的字段覆盖主配置，未写的字段保留主配置原值。
+
+示例（"强化原版生物"模组的配置文件 `BreedingConfig.BoostMod.json`）：
+
+```jsonc
+{
+  "OverrideMain": true,          // 关键开关：允许覆盖主配置物种
+  "Species": {
+    "Wolf_Gray": {
+      "GestationSeconds": 1200.0,   // 覆盖：孕期缩短为 1 天
+      "CubDurationDays": 3,         // 覆盖：成长期缩短为 3 天
+      "AdultMaleBoxScale": 1.5,     // 覆盖：公狼体型增大
+      "MaleAttackBonus": 1.5        // 覆盖：公狼攻击力增强
+      // 未写的字段(季节/密度/喂食/恢复期等)保留原版配置
+    },
+    "Horse_White": {
+      "DensityLimit": 16,           // 覆盖：白马密度上限翻倍
+      "DensityPenaltyStep": 0.1     // 覆盖：密度惩罚更温和
+    }
+  }
+}
+```
+
+**覆盖规则**：
+- 字段级合并：只覆盖显式写了的字段（数值/布尔/字符串与默认值不同才覆盖；集合写了非空列表才覆盖）；
+- 覆盖后自动重新校验参数（`Normalize`），日志输出 `扩展配置 xxx 覆盖物种 'yyy'(OverrideMain=true)`；
+- 多个扩展同时覆盖同一物种时，按文件名排序**后加载者生效**。
+
+> 注意：扩展配置的 `Enabled` 字段始终被忽略（防止第三方关闭整个系统）；`OverrideMain` 只在扩展配置中生效。
 
 ---
 

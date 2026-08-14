@@ -51,7 +51,7 @@
 - **参数含义**：详见 [CONFIG.md](CONFIG.md)
 - **时间规则**：1 游戏天 = 1200 现实秒；大型动物孕期 2 天、小型 1.5 天；成长期 = 孕期 × 3；恢复期 = 孕期 ÷ 2
 - **参考模板**：`Wolf_Gray` 块内附完整参数注释，第三方模组开发者可直接复制参考
-- **第三方模组接入**：其他模组在 `MOD/Assets/` 放一份 `BreedingConfig.{ModId}.json` 即可追加物种配置，无需改本模组代码
+- **第三方模组接入**：其他模组在 `MOD/Assets/` 放一份 `BreedingConfig.{ModId}.json` 即可追加物种配置；开启 `OverrideMain: true` 可覆盖主配置物种（提高原版属性），详见 [CONFIG.md](CONFIG.md) 与 [EXTENSION.md](EXTENSION.md)
 
 ---
 

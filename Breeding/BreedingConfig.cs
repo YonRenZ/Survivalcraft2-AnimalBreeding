@@ -24,12 +24,24 @@ namespace Game
         /// <summary>全局总开关。false 时繁殖系统完全不生效。仅主配置 BreedingConfig.json 的值生效。</summary>
         public bool Enabled { get; set; } = true;
 
+        /// <summary>
+        /// 扩展配置覆盖开关(仅扩展配置 BreedingConfig.{ModId}.json 有意义；主配置中此值被忽略)。
+        /// true = 本扩展配置中的同名物种**直接覆盖**主配置(字段级合并：扩展里显式写了的字段覆盖主配置，
+        ///        未写的字段保留主配置原值)，可用于第三方模组"提高原版属性"(如增强原版生物的繁殖/体型/攻击力)。
+        /// false = 默认，主配置优先，同名冲突跳过。
+        /// 注意：覆盖模式会改变主配置，请在文档/发布说明中告知玩家。
+        /// </summary>
+        public bool OverrideMain { get; set; } = false;
+
         /// <summary>按实体模板名索引的物种配置。每个物种独立设置所有繁殖参数。</summary>
         public Dictionary<string, SpeciesConfig> Species { get; set; } = new();
 
         // ==================== 加载与缓存 ====================
 
         public static BreedingConfig Current { get; private set; }
+
+        /// <summary>默认物种配置参照(用于字段级覆盖合并时判断扩展配置是否显式设置了某字段)。</summary>
+        static readonly SpeciesConfig s_defaultSpecies = new();
 
         /// <summary>
         /// 加载并合并所有 BreedingConfig*.json。
@@ -133,26 +145,83 @@ namespace Game
                     Log.Warning($"[Breeding] 扩展配置 {extInfo.Filename} 无 Species 条目，跳过");
                     return;
                 }
-                int added = 0, skipped = 0;
+                int added = 0, skipped = 0, overridden = 0;
                 foreach (KeyValuePair<string, SpeciesConfig> kv in ext.Species)
                 {
                     if (kv.Value == null) continue;
+
                     if (main.Species.ContainsKey(kv.Key))
                     {
-                        Log.Warning($"[Breeding] 扩展配置 {extInfo.Filename} 的物种 '{kv.Key}' 与主配置/先加载的扩展冲突，跳过");
-                        skipped++;
+                        if (!ext.OverrideMain)
+                        {
+                            Log.Warning($"[Breeding] 扩展配置 {extInfo.Filename} 的物种 '{kv.Key}' 与主配置/先加载的扩展冲突，跳过(如要覆盖请在扩展配置根上设 OverrideMain=true)");
+                            skipped++;
+                            continue;
+                        }
+
+                        // 覆盖模式：字段级合并——扩展里显式写了的字段覆盖主配置，未写的保留主配置原值
+                        SpeciesConfig existing = main.Species[kv.Key];
+                        ApplySpeciesOverrides(existing, kv.Value);
+                        existing.Normalize();
+                        existing.SetSpeciesName(kv.Key);
+                        overridden++;
+                        Log.Information($"[Breeding] 扩展配置 {extInfo.Filename} 覆盖物种 '{kv.Key}'(OverrideMain=true)");
                         continue;
                     }
+
                     kv.Value.Normalize();
                     kv.Value.SetSpeciesName(kv.Key);
                     main.Species[kv.Key] = kv.Value;
                     added++;
                 }
-                Log.Information($"[Breeding] 扩展配置 {extInfo.Filename} 合并完成：新增 {added} 个物种，跳过 {skipped} 个冲突");
+                Log.Information($"[Breeding] 扩展配置 {extInfo.Filename} 合并完成：新增 {added} 个物种，覆盖 {overridden} 个，跳过 {skipped} 个冲突");
             }
             catch (Exception e)
             {
                 Log.Warning($"[Breeding] 扩展配置 {extInfo.Filename} 解析失败: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 字段级覆盖合并(OverrideMain=true 时调用)：把 source 中**显式设置过**的字段覆盖到 target，
+        /// 未显式设置的字段保留 target(主配置)原值。实现：用默认构造实例作参照，
+        /// 扩展反序列化后与默认值不同的属性视为"显式设置"。
+        /// </summary>
+        static void ApplySpeciesOverrides(SpeciesConfig target, SpeciesConfig source)
+        {
+            if (target == null || source == null) return;
+            try
+            {
+                foreach (System.Reflection.PropertyInfo prop in typeof(SpeciesConfig).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                {
+                    // 只处理公共可写属性
+                    if (!prop.CanWrite || prop.SetMethod == null || !prop.SetMethod.IsPublic) continue;
+                    // 跳过 [JsonIgnore] 运行时属性(只在代码内赋值)
+                    if (Attribute.GetCustomAttribute(prop, typeof(JsonIgnoreAttribute)) != null) continue;
+
+                    object srcVal = prop.GetValue(source);
+                    if (srcVal == null) continue;
+
+                    // 集合/字典类型(List/Dictionary)：非空才覆盖(深拷贝，避免共享引用)
+                    if (srcVal is System.Collections.IEnumerable && srcVal is not string)
+                    {
+                        bool hasItems = false;
+                        foreach (object _ in (System.Collections.IEnumerable)srcVal) { hasItems = true; break; }
+                        if (!hasItems) continue;
+                        if (srcVal is List<string> list) prop.SetValue(target, new List<string>(list));
+                        else if (srcVal is Dictionary<string, float> dict) prop.SetValue(target, new Dictionary<string, float>(dict));
+                        continue;
+                    }
+
+                    // 值类型/字符串：与默认构造值不同才覆盖(默认值 = 未在 JSON 中显式写出)
+                    object defVal = prop.GetValue(s_defaultSpecies);
+                    if (srcVal.Equals(defVal)) continue;
+                    prop.SetValue(target, srcVal);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning($"[Breeding] ApplySpeciesOverrides 字段级合并失败: {e.Message}");
             }
         }
 
