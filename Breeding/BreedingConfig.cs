@@ -481,8 +481,15 @@ namespace Game
                 int blockIdx = -1;
                 try
                 {
-                    Block block = BlocksManager.GetBlock(string.Empty, blockName);
-                    if (block != null) blockIdx = block.BlockIndex;
+                    // 联机版 BlocksManager.GetBlock 需要 ModSpace(模组标识)，改用遍历 Blocks 匹配类名
+                    foreach (Block block in BlocksManager.Blocks)
+                    {
+                        if (block != null && block.GetType().Name == blockName)
+                        {
+                            blockIdx = block.BlockIndex;
+                            break;
+                        }
+                    }
                 }
                 catch { }
                 if (blockIdx < 0)

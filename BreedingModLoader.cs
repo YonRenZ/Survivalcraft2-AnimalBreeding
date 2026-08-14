@@ -38,8 +38,95 @@ namespace Game
             ModsManager.RegisterHook("OnMinerHit", this);
             ModsManager.RegisterHook("OnModelRendererDrawExtra", this);
             ModsManager.RegisterHook("OnEatPickable", this);
+            ModsManager.RegisterHook("OnXdbLoad", this);
 
             Log.Information("[BreedingMod] 动物繁殖系统模组初始化(联机版 SurvivalcraftNet 适配)");
+        }
+
+        /// <summary>
+        /// 构建图鉴文本 = 生物介绍(Lang) + 动态基础信息(配置读取)。
+        /// 无介绍也无配置时返回 null。
+        /// </summary>
+        static string BuildBestiaryText(string templateName)
+        {
+            System.Text.StringBuilder sb = new();
+
+            string intro = LanguageControl.Get(out bool foundIntro, "BreedingMod", "SpeciesDescription", templateName);
+            if (foundIntro && !string.IsNullOrEmpty(intro))
+            {
+                sb.Append(intro);
+            }
+
+            BreedingConfig cfg = BreedingConfig.Current;
+            if (cfg == null)
+            {
+                BreedingConfig.Load();
+                cfg = BreedingConfig.Current;
+            }
+            SpeciesConfig species = cfg?.GetSpecies(templateName);
+            if (species != null)
+            {
+                if (sb.Length > 0) sb.AppendLine();
+                sb.AppendLine(string.Format(
+                    LanguageControl.Get("BreedingMod", "Stats", "Attack"),
+                    (species.AdultAttackFactor * species.MaleAttackBonus).ToString("0.##"),
+                    (species.AdultAttackFactor * 1.0).ToString("0.##")));
+                sb.AppendLine(string.Format(
+                    LanguageControl.Get("BreedingMod", "Stats", "Size"),
+                    species.AdultMaleBoxScale.ToString("0.##"),
+                    species.AdultFemaleBoxScale.ToString("0.##")));
+                sb.AppendLine(string.Format(
+                    LanguageControl.Get("BreedingMod", "Stats", "Time"),
+                    (species.GestationSeconds / 1200f).ToString("0.##"),
+                    species.CubDurationDays.ToString("0.##"),
+                    (species.WeaknessSeconds / 1200f).ToString("0.##")));
+            }
+
+            return sb.Length > 0 ? sb.ToString() : null;
+        }
+
+        /// <summary>
+        /// 联机版图鉴无注入钩子(BestiaryDescriptionScreen 直接读数据库 Description)。
+        /// 此处用 OnXdbLoad 在数据库加载时，为每个生物模板的 Creature.Description 写入
+        /// "介绍 + Stats"(攻击力/体型/孕期/成长期/恢复期)，使图鉴详情页能显示扩展信息。
+        /// 注意：会修改数据库模板 Description(其他读取处也会显示)；Stats 在加载时按配置生成。
+        /// </summary>
+        public override void OnXdbLoad(XElement xElement)
+        {
+            try
+            {
+                if (xElement == null) return;
+
+                int injected = 0;
+                foreach (XElement entityTemplate in xElement.Descendants("EntityTemplate"))
+                {
+                    string templateName = entityTemplate.Attribute("Name")?.Value;
+                    if (string.IsNullOrEmpty(templateName)) continue;
+
+                    string text = BuildBestiaryText(templateName);
+                    if (string.IsNullOrEmpty(text)) continue;
+
+                    foreach (XElement member in entityTemplate.Elements("MemberComponentTemplate"))
+                    {
+                        if (member.Attribute("Name")?.Value != "Creature") continue;
+
+                        foreach (XElement param in member.Elements("Parameter"))
+                        {
+                            if (param.Attribute("Name")?.Value == "Description")
+                            {
+                                param.SetAttributeValue("Value", text);
+                                injected++;
+                            }
+                        }
+                        break;
+                    }
+                }
+                Log.Information($"[Breeding] 图鉴生物介绍注入完成: {injected} 个物种");
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] OnXdbLoad 生物介绍注入失败: " + e.Message);
+            }
         }
 
         /// <summary>每帧驱动(钩子，若联机版调用)。</summary>

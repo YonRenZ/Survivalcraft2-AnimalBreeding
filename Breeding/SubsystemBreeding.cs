@@ -60,6 +60,7 @@ namespace Game
         static Project s_project;
         static SubsystemCreatureSpawn s_creatureSpawn;
         static SubsystemBodies s_bodies;
+        static SubsystemSeasons s_seasons;
         static SubsystemTimeOfDay s_timeOfDay;
         static SubsystemTime s_time;
         static SubsystemModelsRenderer s_modelsRenderer;
@@ -97,6 +98,7 @@ namespace Game
             s_project = project;
             s_creatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(true);
             s_bodies = project.FindSubsystem<SubsystemBodies>(true);
+            s_seasons = project.FindSubsystem<SubsystemSeasons>(true);
             s_timeOfDay = project.FindSubsystem<SubsystemTimeOfDay>(true);
             s_time = project.FindSubsystem<SubsystemTime>(true);
             s_modelsRenderer = project.FindSubsystem<SubsystemModelsRenderer>(true);
@@ -888,7 +890,8 @@ namespace Game
             // 2. 求偶期判定(成年 + 在季节 + 不在恢复期 + 喂食条件满足)
             // 条件性繁衍: RequireFeeding=true 时还要求 IsFed(已喂食状态未过期)
             // 幼崽不求偶，避免幼崽与成年公狼冲突
-            Season currentSeason = GetCurrentSeason();
+            // 联机版用原版 SubsystemSeasons(注意其 Season 枚举值与单机版不同，直接用返回值即可)
+            Season currentSeason = s_seasons != null ? s_seasons.Season : Season.Spring;
             state.IsInEstrus = state.IsAdult
                 && species.ParsedSeasons.Contains(currentSeason)
                 && !state.IsWeak
@@ -911,25 +914,6 @@ namespace Game
             else
             {
                 UpdateMale(entity, state, species);
-            }
-        }
-
-        /// <summary>
-        /// 当前季节(联机版无 SubsystemSeasons，用游戏天自算伪季节：每 30 天换一季)。
-        /// 0~29=春、30~59=夏、60~89=秋、90~119=冬，循环。
-        /// 配置中的 BreedingSeasons(Spring/Summer/Autumn/Winter) 按此映射生效。
-        /// </summary>
-        static Season GetCurrentSeason()
-        {
-            double day = s_timeOfDay != null ? s_timeOfDay.Day : 0d;
-            int seasonIndex = ((int)Math.Floor(day / 30d)) % 4;
-            if (seasonIndex < 0) seasonIndex += 4;
-            switch (seasonIndex)
-            {
-                case 0: return Season.Spring;
-                case 1: return Season.Summer;
-                case 2: return Season.Autumn;
-                default: return Season.Winter;
             }
         }
 
