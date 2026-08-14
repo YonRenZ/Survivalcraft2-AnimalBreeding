@@ -84,20 +84,15 @@ namespace Game
             Dictionary<Entity, BreedingState> cachedFromSpawn = s_states.Count > 0
                 ? new Dictionary<Entity, BreedingState>(s_states)
                 : null;
-            Log.Information($"[Breeding] Initialize: 保存 OnReadSpawnData 缓存，count={cachedFromSpawn?.Count ?? 0}");
-            Log.Information($"[Breeding] Initialize: 清空前 s_states.Count={s_states.Count}, 实体ID列表=[{string.Join(",", s_states.Keys.Select(e => e.Id))}]");
             // 诊断：XML 缓存全量转储(EntityId → 存档性别)，与后面 backfill 结果对照
             string xmlCacheDump = s_xmlCachedStates.Count > 0
                 ? string.Join(",", s_xmlCachedStates.Select(kv => kv.Key + "->" + GenderOfSerialized(kv.Value)))
                 : "(空)";
-            Log.Information($"[Breeding][读档] Initialize: s_xmlCachedStates 全量=[{xmlCacheDump}]");
 
             // 清空旧世界残留(静态字段跨世界保留，不清空会导致旧 Entity 引用泄漏)
             s_states.Clear();
             s_pendingReverts.Clear();
             s_initialized = false;
-            Log.Information($"[Breeding] Initialize: 清空旧世界残留，s_states.Count={s_states.Count}");
-            Log.Information($"[Breeding] Initialize: 清空后 s_states.Count={s_states.Count}");
 
             s_project = project;
             s_creatureSpawn = project.FindSubsystem<SubsystemCreatureSpawn>(true);
@@ -136,15 +131,12 @@ namespace Game
                     {
                         if (s_xmlCachedStates.ContainsKey(e.Id))
                         {
-                            Log.Information($"[Breeding][读档] Initialize 恢复: entityId={e.Id} 在 XML 缓存中有权威状态，跳过 OnReadSpawnData 旧数据(性别={s.Gender})，交给 backfill 情况2");
                             continue;
                         }
                         s_states[e] = s;
-                        Log.Information($"[Breeding][读档] Initialize 恢复: 实体 #{e.Id} ({e.ValuesDictionary.DatabaseObject?.Name})，性别={s.Gender}");
                     }
                 }
             }
-            Log.Information($"[Breeding] Initialize 恢复完成: s_states.Count={s_states.Count}");
 
             // 备选加载：如果 ProjectXmlLoad 钩子未被调用(旧版 DLL 可能不支持)，
             // s_xmlCachedStates 为空。此时直接从 Project.xml 文件读取 BreedingModStates 节点。
@@ -216,13 +208,11 @@ namespace Game
                         {
                             s_states[existing] = xmlState;
                             CacheAndApplyBoxSize(existing, xmlState, cfg);
-                            Log.Information($"[Breeding][读档] backfill 情况2: entityId={existing.Id}, template={normTn}, 性别={xmlState.Gender}(Project.xml XML恢复, 权威)");
                             backfilled++;
                             hit2++;
                             continue;
                         }
                         // 反序列化失败或模板名不匹配 → 落入情况1/情况3
-                        Log.Warning($"[Breeding][读档] backfill 情况2失败: entityId={existing.Id}, template={normTn}, xmlStateNull={xmlState == null}, xmlStateTemplate={(xmlState != null ? xmlState.TemplateName : "?")}, xmlState性别={(xmlState != null ? xmlState.Gender.ToString() : "?")}，落入情况1/3");
                     }
 
                     // 情况1：OnReadSpawnData 已缓存存档状态(仅当 XML 缓存无权威条目时使用) → 校验模板名 + 补应用体型
@@ -230,13 +220,11 @@ namespace Game
                     {
                         if (!string.Equals(cached.TemplateName, normTn, StringComparison.Ordinal))
                         {
-                            Log.Warning($"[Breeding][读档] backfill 情况1模板名不匹配: entityId={existing.Id}, stateTemplate={cached.TemplateName}, entityTemplate={normTn}，丢弃旧状态");
                             s_states.Remove(existing);
                         }
                         else
                         {
                             CacheAndApplyBoxSize(existing, cached, cfg); // 补缓存 OriginalBoxSize + 应用体型
-                            Log.Information($"[Breeding][读档] backfill 情况1: entityId={existing.Id}, template={normTn}, 性别={cached.Gender}(OnReadSpawnData存档恢复)");
                             backfilled++;
                             hit1++;
                             continue;
@@ -245,7 +233,6 @@ namespace Game
                     else if (s_xmlCachedStates.Count > 0)
                     {
                         // XML 缓存有内容但本实体没有对应条目(可能是 EntityId 不匹配的线索)
-                        Log.Information($"[Breeding][读档] backfill 情况2未命中: entityId={existing.Id}, template={normTn}, xmlCachedIds=[{string.Join(",", s_xmlCachedStates.Keys)}]");
                     }
 
                     // 情况3：无任何存档(新生物/首次生成) → 按自然生成成体初始化。
@@ -263,7 +250,6 @@ namespace Game
                     CacheAndApplyBoxSize(existing, st, cfg);
                     backfilled++;
                     hit3++;
-                    Log.Information($"[Breeding][读档] backfill 情况3: entityId={existing.Id}, template={normTn}, 性别={st.Gender}(确定性分配)");
                 }
                 Log.Information($"[Breeding][读档] backfill 完成: 总数={backfilled}, 情况1(OnReadSpawnData)={hit1}, 情况2(XML)={hit2}, 情况3(确定性)={hit3}, xmlCached={s_xmlCachedStates.Count}");
 
@@ -283,7 +269,6 @@ namespace Game
                 string finalStatesDump = s_states.Count > 0
                     ? string.Join(",", s_states.Select(kv => (kv.Key != null ? kv.Key.Id.ToString() : "null") + ":" + (kv.Value != null ? kv.Value.TemplateName + ":" + kv.Value.Gender.ToString() : "null")))
                     : "(空)";
-                Log.Information($"[Breeding][诊断] 世界加载后 s_states 全量=[{finalStatesDump}]");
             }
 
             // backfill 完成，XML 缓存不再需要
@@ -328,19 +313,15 @@ namespace Game
                     {
                         BreedingState st = BreedingState.Deserialize(data);
                         if (st != null)
-                            Log.Information($"[Breeding][读档] LoadXmlStates: entityId={entityId}, 性别={st.Gender}, 模板={st.TemplateName}, dataLen={data.Length}");
                         else
-                            Log.Warning($"[Breeding][读档] LoadXmlStates: entityId={entityId}, 反序列化失败, dataLen={data.Length}");
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning($"[Breeding][读档] LoadXmlStates: entityId={entityId}, 反序列化异常: {ex.Message}");
                     }
                     count++;
                 }
                 else
                 {
-                    Log.Warning($"[Breeding][读档] LoadXmlStates: 跳过无效条目 entityId={entityId}, dataLen={data?.Length ?? 0}");
                 }
             }
             Log.Information($"[Breeding][读档] LoadXmlStates: 从 Project.xml 读取 {count} 个活体生物状态");
@@ -369,7 +350,6 @@ namespace Game
                 // 导致整个 Project.xml 保存失败。先拷贝快照再遍历。
                 KeyValuePair<Entity, BreedingState>[] snapshot = s_states.ToArray();
 
-                Log.Information($"[Breeding] SaveXmlStates: s_states.Count={snapshot.Length}，实体ID列表=[{string.Join(",", snapshot.Select(kv => kv.Key == null ? "null" : kv.Key.Id.ToString()))}]");
 
                 if (snapshot.Length == 0) return;
 
@@ -384,7 +364,6 @@ namespace Game
                     XmlUtils.SetAttributeValue(stateEl, "EntityId", entity.Id);
                     XmlUtils.SetAttributeValue(stateEl, "Data", state.Serialize());
                     statesNode.Add(stateEl);
-                    Log.Information($"[Breeding] SaveXmlStates: 实体 #{entity.Id} ({entity.ValuesDictionary.DatabaseObject?.Name})，性别={state.Gender}");
                 }
 
                 if (statesNode.HasElements)
@@ -411,7 +390,6 @@ namespace Game
             // 在此把活体生物状态保存到单独文件 BreedingStates.xml。
             // OnProjectDisposed 在 Project.Dispose() 之后触发，但 s_states 仍保留数据
             // (entity.Id 是 int 字段不受 Dispose 影响，state.Serialize() 不依赖 Entity)。
-            Log.Information($"[Breeding][存档] ClearXmlCache(OnProjectDisposed): 卸载前 s_states.Count={s_states.Count}, 全量=[{(s_states.Count > 0 ? string.Join(",", s_states.Select(kv => (kv.Key != null ? kv.Key.Id.ToString() : "null") + ":" + (kv.Value != null ? kv.Value.TemplateName + ":" + kv.Value.Gender.ToString() : "null"))) : "(空)")}]");
             SaveStatesToFile();
             s_xmlCachedStates.Clear();
 
@@ -439,7 +417,6 @@ namespace Game
             {
                 if (string.IsNullOrEmpty(s_worldDirectory))
                 {
-                    Log.Information("[Breeding] SaveStatesToFile: 跳过(worldDir 为空)");
                     return;
                 }
 
@@ -447,7 +424,6 @@ namespace Game
                 KeyValuePair<Entity, BreedingState>[] snapshot = s_states.ToArray();
                 if (snapshot.Length == 0)
                 {
-                    Log.Information("[Breeding] SaveStatesToFile: 跳过(states=0)");
                     return;
                 }
 
@@ -509,12 +485,10 @@ namespace Game
                         if (entityId != 0 && !string.IsNullOrEmpty(data))
                         {
                             s_xmlCachedStates[entityId] = data;
-                            Log.Information($"[Breeding][读档] LoadStatesFromFile: entityId={entityId}, 性别={GenderOfSerialized(data)}, dataLen={data.Length}");
                             count++;
                         }
                         else
                         {
-                            Log.Warning($"[Breeding][读档] LoadStatesFromFile: 跳过无效条目 entityId={entityId}, dataLen={data?.Length ?? 0}");
                         }
                     }
                     Log.Information($"[Breeding][读档] LoadStatesFromFile: 从 BreedingStates.xml 读取 {count} 个状态");
@@ -541,19 +515,16 @@ namespace Game
             if (string.IsNullOrEmpty(templateName)) return;
 
             string normalizedTemplate = NormalizeTemplateName(templateName);
-            Log.Information($"[Breeding][生命] OnEntityAdd 进入: entityId={entity.Id}, template={templateName}, normalized={normalizedTemplate}, hasState={s_states.ContainsKey(entity)}");
 
             // 上鞍撤销：如果新增的是 *_Saddled 实体且待恢复队列有匹配项 → 撤销上鞍
             if (templateName.EndsWith("_Saddled", StringComparison.Ordinal))
             {
                 if (TryConsumePendingRevert(entity, templateName, out PendingSaddleRevert revert))
                 {
-                    Log.Information($"[Breeding][生命] OnEntityAdd: entityId={entity.Id} 匹配到上鞍撤销队列，执行撤销");
                     RevertSaddling(entity, revert, cfg);
                     return; // 撤销后该 Saddled 实体已被删除，不再处理
                 }
                 // 无匹配项 = 正常上鞍(原马不处于禁止状态)，继续按带鞍模板注册
-                Log.Information($"[Breeding][生命] OnEntityAdd: entityId={entity.Id} 为带鞍模板且无撤销匹配，按正常上鞍注册");
             }
 
             // 归一化模板名：带鞍的马/驴/骆驼等(*_Saddled)去掉后缀后查找配置
@@ -564,7 +535,6 @@ namespace Game
             if (s_states.ContainsKey(entity))
             {
                 // OnReadSpawnData 已恢复存档状态，这里保留不覆盖
-                Log.Information($"[Breeding][生命] OnEntityAdd: entityId={entity.Id} 已有状态(性别={s_states[entity].Gender})，跳过不覆盖");
                 return;
             }
 
@@ -581,7 +551,6 @@ namespace Game
                 WeaknessRemainingSeconds = -1f
             };
             s_states[entity] = state;
-            Log.Information($"[Breeding][生命] OnEntityAdd: entityId={entity.Id} 注册新状态, template={normalizedTemplate}, 性别={state.Gender}");
 
             // 缓存原版 BoxSize/ModelScale 并应用成年体型
             CacheAndApplyBoxSize(entity, state, cfg);
@@ -627,7 +596,6 @@ namespace Game
             {
                 // 理论不可达：所有调用点实体都已 AddEntity 并分配了 Id
                 BreedingGender fallback = s_random.Bool(maleProbability) ? BreedingGender.Male : BreedingGender.Female;
-                Log.Warning($"[Breeding][性别] RollGender: entity 为 null，随机兜底={fallback}");
                 return fallback;
             }
 
@@ -637,7 +605,6 @@ namespace Game
             uint bucket = (hash >> 8) & 0xFFFFFFu;
             float normalized = bucket / 16777215f;
             BreedingGender result = normalized < maleProbability ? BreedingGender.Male : BreedingGender.Female;
-            Log.Information($"[Breeding][性别] RollGender: entityId={entity.Id}, template={templateName}, hash=0x{hash:X8}, bucket={bucket}, normalized={normalized:F6}, maleProb={maleProbability:F3} → {result}");
             return result;
         }
 
@@ -688,7 +655,6 @@ namespace Game
 
             bool hadState = s_states.TryGetValue(entity, out BreedingState state);
             string removeDetail = hadState ? ", 性别=" + state.Gender.ToString() : "";
-            Log.Information($"[Breeding][生命] OnEntityRemove 进入: entityId={entity.Id}, template={entity.ValuesDictionary.DatabaseObject?.Name}, hasState={hadState}{removeDetail}, s_initialized={s_initialized}");
 
             // 上鞍撤销暂存：仅当被移除的是"活的、处于禁止交互状态、配置了交互拦截的可骑乘物种"时暂存。
             // 过滤条件说明：
@@ -719,7 +685,6 @@ namespace Game
                             QueuedAtSeconds = (float)s_time.GameTime
                         });
                         s_states.Remove(entity);
-                        Log.Information($"[Breeding][生命] OnEntityRemove: entityId={entity.Id} 进入上鞍撤销暂存队列, 性别={state.Gender}");
                         return;
                     }
                 }
@@ -728,7 +693,6 @@ namespace Game
             if (hadState)
             {
                 s_states.Remove(entity);
-                Log.Information($"[Breeding][生命] OnEntityRemove: entityId={entity.Id} 已移除状态, 性别={state.Gender}");
             }
         }
 
@@ -860,20 +824,16 @@ namespace Game
         {
             if (entity == null || spawnEntityData == null)
             {
-                Log.Warning($"[Breeding][读档] OnReadSpawnData: 参数为空 entity={entity != null}, spawnEntityData={spawnEntityData != null}");
                 return;
             }
 
             string entryTemplate = entity.ValuesDictionary.DatabaseObject?.Name;
-            Log.Information($"[Breeding][读档] OnReadSpawnData 进入: entityId={entity.Id}, spawnData.EntityId={spawnEntityData.EntityId}, EntityId一致={spawnEntityData.EntityId == entity.Id}, template={entryTemplate}, dataLen={spawnEntityData.Data?.Length ?? 0}, dataPrefix={spawnEntityData.Data?.Substring(0, Math.Min(12, spawnEntityData.Data?.Length ?? 0))}, s_initialized={s_initialized}, hasState={s_states.ContainsKey(entity)}");
 
             BreedingState state = BreedingState.Deserialize(spawnEntityData.Data);
             if (state == null)
             {
-                Log.Warning($"[Breeding][读档] OnReadSpawnData: entityId={entity.Id} 数据为空或反序列化失败，将由 OnEntityAdd 重新初始化(确定性性别)");
                 return;
             }
-            Log.Information($"[Breeding][读档] OnReadSpawnData: entityId={entity.Id} 反序列化成功, 存档性别={state.Gender}, 存档模板={state.TemplateName}, Stage={state.Stage}, BirthDay={state.BirthDay}");
 
             // 判断数据来源：如果 EntityId 匹配，说明来自 SpawnChunk；否则来自 Project.xml
             string source = spawnEntityData.EntityId == entity.Id ? "SpawnChunk" : "ProjectXml";
@@ -886,7 +846,6 @@ namespace Game
             // 存档状态与实体模板必须一致；不一致说明数据过时(如生物已升级成带鞍模板)，丢弃由 OnEntityAdd 重新初始化
             if (!string.Equals(state.TemplateName, normalizedTemplate, StringComparison.Ordinal))
             {
-                Log.Warning($"[Breeding][读档] OnReadSpawnData: entityId={entity.Id} 状态模板名不匹配: state={state.TemplateName}, entity={normalizedTemplate}，丢弃旧状态");
                 return;
             }
 
@@ -896,7 +855,6 @@ namespace Game
             // 若因 s_initialized 而忽略存档状态，随后 OnEntityAdd 会按"自然生成"随机分配性别，
             // 导致生物性别随地图重新打开/Despawn 循环而随机变化。存档状态是权威数据，必须恢复。
             s_states[entity] = state;
-            Log.Information($"[Breeding][读档] OnReadSpawnData: entityId={entity.Id} 已恢复状态, 来源={source}, 性别={state.Gender}");
 
             // 仅在游戏运行时立即应用体型；Initialize 之前的调用(旧版 SCAPI 加载路径)由 backfill 情况1统一处理
             if (!s_initialized) return;
@@ -913,16 +871,13 @@ namespace Game
         {
             if (!s_initialized || spawn?.Entity == null || spawnEntityData == null)
             {
-                Log.Warning($"[Breeding][存档] OnSaveSpawnData: 跳过(s_initialized={s_initialized}, spawn={spawn != null}, spawnEntityData={spawnEntityData != null})");
                 return;
             }
             if (!s_states.TryGetValue(spawn.Entity, out BreedingState state))
             {
-                Log.Information($"[Breeding][存档] OnSaveSpawnData: entityId={spawn.Entity.Id}, template={spawn.Entity.ValuesDictionary.DatabaseObject?.Name} 无状态，不写入 Data");
                 return;
             }
             spawnEntityData.Data = state.Serialize();
-            Log.Information($"[Breeding][存档] OnSaveSpawnData: entityId={spawn.Entity.Id}, template={spawn.Entity.ValuesDictionary.DatabaseObject?.Name}, 性别={state.Gender}, dataLen={spawnEntityData.Data?.Length ?? 0}");
         }
 
         // ==================== 每帧更新(由 OnFactorsUpdate 驱动) ====================

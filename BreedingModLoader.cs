@@ -45,14 +45,12 @@ namespace Game
         /// <summary>当 Project 加载完成时执行。繁殖系统在此缓存子系统引用 + 加载配置。</summary>
         public override void OnProjectLoaded(Project project)
         {
-            Log.Information("[Breeding][钩子] OnProjectLoaded 触发");
             SubsystemBreeding.Initialize(project);
         }
 
         /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
         public override void OnProjectDisposed()
         {
-            Log.Information("[Breeding][钩子] OnProjectDisposed 触发");
             SubsystemBreeding.ClearXmlCache();
         }
 
@@ -66,7 +64,6 @@ namespace Game
 #pragma warning disable CS0618
         public override void ProjectXmlLoad(XElement xElement)
         {
-            Log.Information("[Breeding][钩子] ProjectXmlLoad 触发");
             SubsystemBreeding.LoadXmlStates(xElement);
         }
 #pragma warning restore CS0618
@@ -77,7 +74,6 @@ namespace Game
         /// </summary>
         public override void ProjectXmlSave(XElement xElement)
         {
-            Log.Information("[Breeding][钩子] ProjectXmlSave 触发");
             SubsystemBreeding.SaveXmlStates(xElement);
         }
 
@@ -88,7 +84,6 @@ namespace Game
         /// </summary>
         public override void OnProjectXmlSaved(XElement xElement)
         {
-            Log.Information("[Breeding][钩子] OnProjectXmlSaved 触发");
             SubsystemBreeding.SaveXmlStates(xElement);
         }
 
@@ -96,25 +91,21 @@ namespace Game
 
         public override void OnEntityAdd(Entity entity)
         {
-            Log.Information($"[Breeding][钩子] OnEntityAdd 触发: entityId={entity?.Id}, template={entity?.ValuesDictionary?.DatabaseObject?.Name}");
             SubsystemBreeding.OnEntityAdd(entity);
         }
 
         public override void OnEntityRemove(Entity entity)
         {
-            Log.Information($"[Breeding][钩子] OnEntityRemove 触发: entityId={entity?.Id}, template={entity?.ValuesDictionary?.DatabaseObject?.Name}");
             SubsystemBreeding.OnEntityRemove(entity);
         }
 
         public override void OnReadSpawnData(Entity entity, SpawnEntityData spawnEntityData)
         {
-            Log.Information($"[Breeding][钩子] OnReadSpawnData 触发: entityId={entity?.Id}, spawnData.EntityId={spawnEntityData?.EntityId}, dataLen={spawnEntityData?.Data?.Length ?? 0}");
             SubsystemBreeding.OnReadSpawnData(entity, spawnEntityData);
         }
 
         public override void OnSaveSpawnData(ComponentSpawn spawn, SpawnEntityData spawnEntityData)
         {
-            Log.Information($"[Breeding][钩子] OnSaveSpawnData 触发: entityId={spawn?.Entity?.Id}, template={spawn?.Entity?.ValuesDictionary?.DatabaseObject?.Name}");
             SubsystemBreeding.OnSaveSpawnData(spawn, spawnEntityData);
         }
 
