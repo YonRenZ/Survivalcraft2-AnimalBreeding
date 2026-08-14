@@ -203,10 +203,6 @@ namespace Game
                 if (string.IsNullOrEmpty(templateName)) return;
 
                 string text = BuildBestiaryText(templateName);
-
-                // 诊断日志：确认钩子触发与内容构建结果(排查用，正式版可删)
-                Log.Information($"[Breeding] 图鉴详情钩子触发: template={templateName}, textLen={(text?.Length ?? 0)}, text=[{text}]");
-
                 if (string.IsNullOrEmpty(text)) return;
 
                 // 1. 详情页 Description 标签(介绍 + Stats)
@@ -214,7 +210,6 @@ namespace Game
                 if (description != null)
                 {
                     description.Text = text;
-                    Log.Information($"[Breeding] 图鉴详情 Description 标签已更新: template={templateName}");
                 }
                 else
                 {
