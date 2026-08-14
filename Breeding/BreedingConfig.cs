@@ -132,8 +132,16 @@ namespace Game
         {
             try
             {
-                // 用 Get<string> 读取，throwOnNotFound=false 避免抛异常
-                string json = ContentManager.Get<string>(extInfo.ContentPath, extInfo.ContentSuffix, false);
+                // 联机版 ContentInfo 无 ContentSuffix，直接用 ContentStream 读取
+                string json = null;
+                if (extInfo.ContentStream != null)
+                {
+                    extInfo.ContentStream.Position = 0;
+                    using (System.IO.StreamReader reader = new System.IO.StreamReader(extInfo.ContentStream))
+                    {
+                        json = reader.ReadToEnd();
+                    }
+                }
                 if (string.IsNullOrEmpty(json))
                 {
                     Log.Warning($"[Breeding] 扩展配置 {extInfo.Filename} 内容为空或读取失败，跳过");
@@ -470,7 +478,13 @@ namespace Game
                 // 支持 "类名" 或 "类名:数据" 格式
                 string[] parts = FeedItem.Split(':');
                 string blockName = parts[0];
-                int blockIdx = BlocksManager.GetBlockIndex(blockName, false);
+                int blockIdx = -1;
+                try
+                {
+                    Block block = BlocksManager.GetBlock(string.Empty, blockName);
+                    if (block != null) blockIdx = block.BlockIndex;
+                }
+                catch { }
                 if (blockIdx < 0)
                 {
                     Log.Warning($"[Breeding] FeedItem '{FeedItem}' 无法解析为方块类名，该物种喂食发情将无法匹配任何物品: {blockName}");

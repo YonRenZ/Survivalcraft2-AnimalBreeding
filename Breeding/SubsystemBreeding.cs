@@ -128,7 +128,7 @@ namespace Game
                 {
                     if (cachedFromSpawn.TryGetValue(e, out BreedingState s))
                     {
-                        if (s_xmlCachedStates.ContainsKey(e.Id))
+                        if (s_xmlCachedStates.ContainsKey(e.EntityId))
                         {
                             continue;
                         }
@@ -199,7 +199,7 @@ namespace Game
                     //   若情况1 优先，会出现"XML 缓存有正确性别却用不上"→ 重进世界性别回退。
 
                     // 情况2：从 Project.xml 的 <BreedingModStates> 恢复(活着的生物，权威存档)
-                    if (s_xmlCachedStates.TryGetValue(existing.Id, out string xmlData))
+                    if (s_xmlCachedStates.TryGetValue(existing.EntityId, out string xmlData))
                     {
                         BreedingState xmlState = BreedingState.Deserialize(xmlData);
                         if (xmlState != null
@@ -253,7 +253,7 @@ namespace Game
                 if (s_xmlCachedStates.Count > 0)
                 {
                     List<int> orphanIds = s_xmlCachedStates.Keys
-                        .Where(id => !project.Entities.Any(e => e.Id == id))
+                        .Where(id => !project.Entities.Any(e => e.EntityId == id))
                         .ToList();
                     if (orphanIds.Count > 0)
                     {
@@ -340,7 +340,7 @@ namespace Game
                     if (entity == null || state == null) continue;
 
                     XElement stateEl = new("State");
-                    XmlUtils.SetAttributeValue(stateEl, "EntityId", entity.Id);
+                    XmlUtils.SetAttributeValue(stateEl, "EntityId", entity.EntityId);
                     XmlUtils.SetAttributeValue(stateEl, "Data", state.Serialize());
                     statesNode.Add(stateEl);
                 }
@@ -368,7 +368,7 @@ namespace Game
             // 备选保存：如果 ProjectXmlSave/OnProjectXmlSaved 钩子未被调用(旧版 DLL)，
             // 在此把活体生物状态保存到单独文件 BreedingStates.xml。
             // OnProjectDisposed 在 Project.Dispose() 之后触发，但 s_states 仍保留数据
-            // (entity.Id 是 int 字段不受 Dispose 影响，state.Serialize() 不依赖 Entity)。
+            // (entity.EntityId 是 int 字段不受 Dispose 影响，state.Serialize() 不依赖 Entity)。
             SaveStatesToFile();
             s_xmlCachedStates.Clear();
 
@@ -387,10 +387,10 @@ namespace Game
         }
 
         /// <summary>
-        /// 把 s_states 保存到单独文件 BreedingStates.xml(备选保存方案)。
+        /// 把 s_states 保存到单独文件 BreedingStates.xml(备选保存方案；联机版主保存通道)。
         /// 文件路径：{世界目录}/BreedingStates.xml
         /// </summary>
-        static void SaveStatesToFile()
+        public static void SaveStatesToFile()
         {
             try
             {
@@ -413,7 +413,7 @@ namespace Game
                 {
                     if (kv.Key == null || kv.Value == null) continue;
                     XElement el = new("State");
-                    XmlUtils.SetAttributeValue(el, "EntityId", kv.Key.Id);
+                    XmlUtils.SetAttributeValue(el, "EntityId", kv.Key.EntityId);
                     XmlUtils.SetAttributeValue(el, "Data", kv.Value.Serialize());
                     root.Add(el);
                     entities.Add(kv.Key);
@@ -427,7 +427,7 @@ namespace Game
                     {
                         XmlUtils.SaveXmlToStream(root, stream, null, true);
                     }
-                    Log.Information($"[Breeding] SaveStatesToFile: 保存 {count} 个状态到 BreedingStates.xml，实体ID列表=[{string.Join(",", entities.Select(e => e.Id.ToString()))}]");
+                    Log.Information($"[Breeding] SaveStatesToFile: 保存 {count} 个状态到 BreedingStates.xml，实体ID列表=[{string.Join(",", entities.Select(e => e.EntityId.ToString()))}]");
                 }
             }
             catch (Exception e)
@@ -576,7 +576,7 @@ namespace Game
             }
 
             string templateName = entity.ValuesDictionary.DatabaseObject?.Name;
-            uint hash = StableHash(entity.Id, templateName);
+            uint hash = StableHash(entity.EntityId, templateName);
             // 取哈希高 24 位映射到 [0,1)，按概率阈值判定公/母
             uint bucket = (hash >> 8) & 0xFFFFFFu;
             float normalized = bucket / 16777215f;
@@ -798,6 +798,47 @@ namespace Game
 
         // ==================== 每帧更新(联机版: 由 SubsystemUpdate 驱动 BreedingModLoader.Update) ====================
 
+        /// <summary>
+        /// 每帧实体全量同步(联机版无 OnEntityAdd/OnEntityRemove 钩子，由 ModLoader.Tick 调用)。
+        /// 对比当前 Project 实体集合与追踪表：新实体注册、已消失实体清理。
+        /// </summary>
+        public static void SyncEntities(Project project)
+        {
+            if (!s_initialized || project == null) return;
+
+            // 新增实体
+            foreach (Entity entity in project.Entities)
+            {
+                if (entity != null && !s_states.ContainsKey(entity))
+                {
+                    OnEntityAdd(entity);
+                }
+            }
+
+            // 移除已消失实体
+            if (s_states.Count > 0)
+            {
+                List<Entity> toRemove = new();
+                foreach (KeyValuePair<Entity, BreedingState> kv in s_states)
+                {
+                    if (kv.Key == null || !project.Entities.Contains(kv.Key))
+                    {
+                        toRemove.Add(kv.Key);
+                    }
+                }
+                foreach (Entity entity in toRemove)
+                {
+                    OnEntityRemove(entity);
+                }
+            }
+        }
+
+        /// <summary>当前游戏时间(现实秒，用于定期存档节流)。</summary>
+        public static double GetCurrentGameTime()
+        {
+            return s_time != null ? s_time.GameTime : 0d;
+        }
+
         /// <summary>每帧更新所有被追踪的生物(联机版替代单机版 OnFactorsUpdate 钩子)。</summary>
         public static void Update(float dt)
         {
@@ -933,19 +974,12 @@ namespace Game
             float adultScale = state.Gender == BreedingGender.Male ? species.AdultMaleBoxScale : species.AdultFemaleBoxScale;
             float scale = species.CubBoxScale + (adultScale - species.CubBoxScale) * progress;
 
-            // 碰撞盒
+            // 碰撞盒缩放(联机版 ComponentModel 无 ModelScale，视觉模型缩放已移除)
             Vector3 orig = state.OriginalBoxSize.Value;
             body.BoxSize = new Vector3(orig.X * scale, orig.Y * scale, orig.Z * scale);
-
-            // 视觉模型缩放(修复幼崽体型不变的问题)
-            ComponentModel model = entity.FindComponent<ComponentModel>();
-            if (model != null && state.OriginalModelScale.HasValue)
-            {
-                model.ModelScale = state.OriginalModelScale.Value * scale;
-            }
         }
 
-        /// <summary>缓存原版 BoxSize/ModelScale 并按当前成长度应用体型(OnEntityAdd / OnReadSpawnData 用)。</summary>
+        /// <summary>缓存原版 BoxSize 并按当前成长度应用体型。</summary>
         static void CacheAndApplyBoxSize(Entity entity, BreedingState state, BreedingConfig cfg)
         {
             ComponentBody body = entity.FindComponent<ComponentBody>();
@@ -953,12 +987,6 @@ namespace Game
             if (!state.OriginalBoxSize.HasValue)
             {
                 state.OriginalBoxSize = body.BoxSize;
-            }
-
-            ComponentModel model = entity.FindComponent<ComponentModel>();
-            if (model != null && !state.OriginalModelScale.HasValue)
-            {
-                state.OriginalModelScale = model.ModelScale;
             }
 
             SpeciesConfig species = cfg.GetSpecies(state.TemplateName);
@@ -1011,7 +1039,7 @@ namespace Game
             if (state.MatingProximitySeconds >= species.MatingRequiredProximitySeconds)
             {
                 state.PregnancyRemainingSeconds = species.GestationSeconds;
-                state.PregnancyFatherId = mate.Id;
+                state.PregnancyFatherId = mate.EntityId;
                 state.MatingProximitySeconds = 0f;
                 // 母狼不进入虚弱期，直接怀孕(怀孕期间不会再次交配)
                 // 分娩后才进入虚弱期
@@ -1024,7 +1052,7 @@ namespace Game
                     maleState.TargetFemaleId = 0;
                 }
 
-                Log.Information($"[Breeding] 配对成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.Id}, father#{mate.Id}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
+                Log.Information($"[Breeding] 配对成功(相处{species.MatingRequiredProximitySeconds}秒): mother={state.TemplateName}#{entity.EntityId}, father#{mate.EntityId}, gestationSec={species.GestationSeconds}, maleWeaknessSec={species.WeaknessSeconds}");
 
                 // 扩展接口事件：通知其他模组(疾病/草药系统等)
                 BreedingEvents.RaiseMatingSuccess(entity, mate);
@@ -1098,11 +1126,11 @@ namespace Game
                 return;
             }
 
-            state.TargetFemaleId = female.Id;
+            state.TargetFemaleId = female.EntityId;
 
             // 检查是否有竞争对手(其他求偶中的公狼也以同一母狼为目标)
             // FindRival 内部同样只接受 IsInEstrus=true(需喂食的已喂食)的对手
-            Entity rival = FindRival(entity, state, female.Id, species);
+            Entity rival = FindRival(entity, state, female.EntityId, species);
             if (rival != null)
             {
                 // 有竞争对手 → 攻击对方
@@ -1244,7 +1272,7 @@ namespace Game
                 // 立即应用幼崽体型(成长度=0 → CubBoxScale)
                 ApplyBoxSizeByGrowth(cub, cubState, species, 0f);
             }
-            Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
+            Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.EntityId}, cub#{cub.EntityId}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
 
             // 扩展接口事件：通知其他模组(疾病系统可在此时标记新生个体患病)
             BreedingEvents.RaiseBirth(mother, cub);
