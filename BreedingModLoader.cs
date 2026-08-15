@@ -244,6 +244,33 @@ namespace Game
             ComponentHealth health = creature.ComponentHealth;
             if (health != null && health.DeathTime.HasValue) return;
 
+            // 当前成长进度(用于视觉缩放 + 第3行进度)
+            double currentDay = SubsystemBreeding.GetCurrentDay();
+            float progress = state.GetGrowthProgress(currentDay, species.CubDurationDays);
+
+            // 视觉模型缩放：联机版无 ModelScale，改用根骨骼缩放(SetBoneTransform + 重算绝对骨骼)。
+            // 只对幼崽期缩放(Cub→成年按 CubBoxScale→AdultScale 线性)；成年不缩放(保持原版)。
+            // 注：若某模型根骨骼带动画可能受影响(多数生物根骨骼是纯层级根, 无动画)。
+            try
+            {
+                if (state.Stage == GrowthStage.Cub && componentModel.Model != null)
+                {
+                    ModelBone rootBone = componentModel.Model.RootBone;
+                    if (rootBone != null)
+                    {
+                        float adultScale = state.Gender == BreedingGender.Male
+                            ? species.AdultMaleBoxScale : species.AdultFemaleBoxScale;
+                        float scale = species.CubBoxScale + (adultScale - species.CubBoxScale) * progress;
+                        componentModel.SetBoneTransform(rootBone.Index, Matrix.CreateScale(scale));
+                        componentModel.CalculateAbsoluteBonesTransforms(camera);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // 骨骼缩放失败不影响其他功能
+            }
+
             float height = body.BoxSize.Y;
             Vector3 headPos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.5f, 0f);
             Vector3 line2Pos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.35f, 0f);
@@ -262,7 +289,6 @@ namespace Game
             Vector3 down = Vector3.TransformNormal(-0.005f * Vector3.UnitY, camera.ViewMatrix);
 
             BitmapFont font = LabelWidget.BitmapFont;
-            double currentDay = SubsystemBreeding.GetCurrentDay();
 
             FontBatch3D fontBatch = modelsRenderer.PrimitivesRenderer.FontBatch(
                 font, 1,
@@ -287,7 +313,6 @@ namespace Game
             Vector3 vector3 = Vector3.Transform(line3Pos, camera.ViewMatrix);
             if (vector3.Z < 0f)
             {
-                float progress = state.GetGrowthProgress(currentDay, species.CubDurationDays);
                 int percent = (int)Math.Round(progress * 100f);
                 string line3 = string.Format(LanguageControl.Get("BreedingMod", "Growth"), percent.ToString());
 
