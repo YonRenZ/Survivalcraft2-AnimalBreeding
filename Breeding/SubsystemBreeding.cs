@@ -112,14 +112,26 @@ namespace Game
 
         /// <summary>
         /// 实体 Add 前(EntityPackage 生成前)回调(由 BreedingModLoader 订阅 BeforeEntityAdded)。
-        /// 权威端：若该实体已有繁殖状态，写入实体 ValuesDictionary，确保随初始 EntityPackage 同步给客户端。
+        /// 权威端：先注册繁殖状态(若尚未注册)，再写入实体 ValuesDictionary，
+        /// 确保随初始 EntityPackage 同步给客户端，客户端可恢复正确性别/阶段等。
+        /// 注意：ProjectNet 的 BeforeEntityAdded handler 会先生成 EntityId(非零)，
+        /// 故此处 RollGender 可用正确 EntityId 得到公母混合的确定性性别。
         /// </summary>
         public static void OnBeforeEntityAdded(Entity entity)
         {
             if (entity == null || !IsAuthority) return;
-            if (s_states.TryGetValue(entity, out BreedingState state))
+            if (s_states.ContainsKey(entity))
             {
-                WriteStateToEntity(entity, state);
+                WriteStateToEntity(entity, s_states[entity]);
+            }
+            else
+            {
+                // 尚未注册：先注册(仅对配置了繁殖的物种生效，非繁殖实体内部跳过)
+                OnEntityAdd(entity);
+                if (s_states.TryGetValue(entity, out BreedingState state))
+                {
+                    WriteStateToEntity(entity, state);
+                }
             }
         }
 
@@ -963,13 +975,13 @@ namespace Game
                 else
                 {
                     // 客户端：只算显示状态(求偶/成长/体型)，不配对/不产仔(服务器权威)
-                    UpdateEntityClient(entity, state, species);
+                    UpdateEntityClient(entity, state, species, dt);
                 }
             }
         }
 
         /// <summary>客户端只读显示更新：算求偶状态/成长/体型，不推进倒计时、不配对产仔。</summary>
-        static void UpdateEntityClient(Entity entity, BreedingState state, SpeciesConfig species)
+        static void UpdateEntityClient(Entity entity, BreedingState state, SpeciesConfig species, float dt)
         {
             // 求偶状态(显示)：基于服务器同步的孕期/恢复/喂食状态 + 当前季节
             Season currentSeason = s_seasons != null ? s_seasons.Season : Season.Spring;
@@ -978,9 +990,12 @@ namespace Game
                 && !state.IsWeak
                 && (!species.RequireFeeding || state.IsFed);
 
-            // 成长推进(用 BirthDay 自动算)与体型显示
+            // 客户端也运行行为(寻路/相处/竞争)用于视觉表现；
+            // 配对/产仔等权威结果由服务器决定并通过实体状态同步。
             UpdateGrowth(entity, state, species);
             UpdateBoxSize(entity, state, species);
+            UpdateFemale(entity, state, species, dt);
+            UpdateMale(entity, state, species);
         }
 
         /// <summary>更新单只生物。</summary>
@@ -1104,17 +1119,20 @@ namespace Game
 
         static void UpdateFemale(Entity entity, BreedingState state, SpeciesConfig species, float dt)
         {
-            // 1. 孕期倒计时
+            // 1. 孕期倒计时(客户端也推进用于显示，产仔仅服务器权威)
             if (state.PregnancyRemainingSeconds > 0f)
             {
                 state.PregnancyRemainingSeconds -= dt;
                 if (state.PregnancyRemainingSeconds <= 0f)
                 {
                     state.PregnancyRemainingSeconds = -1f;
-                    GiveBirth(entity, state, species);
-                    state.PregnancyFatherId = 0;
-                    // 分娩后进入虚弱期
-                    state.WeaknessRemainingSeconds = species.WeaknessSeconds;
+                    if (IsAuthority)
+                    {
+                        GiveBirth(entity, state, species);
+                        state.PregnancyFatherId = 0;
+                        // 分娩后进入虚弱期
+                        state.WeaknessRemainingSeconds = species.WeaknessSeconds;
+                    }
                 }
                 return; // 怀孕中不交配
             }
@@ -1138,8 +1156,8 @@ namespace Game
             float densityFactor = GetDensityFactor(entity, species);
             state.MatingProximitySeconds += dt * densityFactor;
 
-            // 5. 相处时间达到阈值 → 交配
-            if (state.MatingProximitySeconds >= species.MatingRequiredProximitySeconds)
+            // 5. 相处时间达到阈值 → 交配(仅服务器权威，客户端只累加显示不配对)
+            if (IsAuthority && state.MatingProximitySeconds >= species.MatingRequiredProximitySeconds)
             {
                 state.PregnancyRemainingSeconds = species.GestationSeconds;
                 state.PregnancyFatherId = mate.EntityId;
