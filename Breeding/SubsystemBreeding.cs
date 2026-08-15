@@ -659,13 +659,18 @@ namespace Game
                 return fallback;
             }
 
-            // EntityId 为 0 时(实体未分配 ID 的异常情况)回退随机，避免全公/全母
+            string templateName = entity.ValuesDictionary.DatabaseObject?.Name;
+
+            // EntityId 为 0 时(实体未分配 ID 的异常情况)：用对象哈希码作为临时种子，
+            // 避免全公/全母或随机偏斜。同一会话内稳定(同一实体对象引用不变)，分布均匀。
             if (entity.EntityId == 0)
             {
-                return s_random.Bool(maleProbability) ? BreedingGender.Male : BreedingGender.Female;
+                uint h = StableHash(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(entity), templateName);
+                uint b = (h >> 8) & 0xFFFFFFu;
+                float n = b / 16777215f;
+                return n < maleProbability ? BreedingGender.Male : BreedingGender.Female;
             }
 
-            string templateName = entity.ValuesDictionary.DatabaseObject?.Name;
             uint hash = StableHash(entity.EntityId, templateName);
             // 取哈希高 24 位映射到 [0,1)，按概率阈值判定公/母
             uint bucket = (hash >> 8) & 0xFFFFFFu;
