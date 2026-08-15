@@ -659,6 +659,12 @@ namespace Game
                 return fallback;
             }
 
+            // EntityId 为 0 时(实体未分配 ID 的异常情况)回退随机，避免全公/全母
+            if (entity.EntityId == 0)
+            {
+                return s_random.Bool(maleProbability) ? BreedingGender.Male : BreedingGender.Female;
+            }
+
             string templateName = entity.ValuesDictionary.DatabaseObject?.Name;
             uint hash = StableHash(entity.EntityId, templateName);
             // 取哈希高 24 位映射到 [0,1)，按概率阈值判定公/母
