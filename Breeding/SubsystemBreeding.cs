@@ -5,6 +5,8 @@ using System.Xml.Linq;
 using Engine;
 using GameEntitySystem;
 using Game;
+using Game.NetWork;
+using Game.NetWork.Packages;
 using XmlUtilities;
 
 namespace Game
@@ -69,6 +71,71 @@ namespace Game
 
         /// <summary>当前 Project 实例(联机版用于注册/注销 IUpdateable 每帧更新)。</summary>
         public static Project ProjectInstance => s_project;
+
+        // ==================== 联机版跨端同步(服务器/本地权威 ↔ 客户端只读) ====================
+
+        /// <summary>当前是否为"繁殖权威端"(服务器或本地单机)：运行完整繁殖逻辑。</summary>
+        static bool IsAuthority => CommonLib.GetCurrentWorkType() != WorkType.Client;
+
+        /// <summary>当前是否为真联机服务器(需主动发包同步给客户端)。</summary>
+        static bool IsNetServer => CommonLib.Net.IsServer;
+
+        /// <summary>把繁殖状态写入实体 ValuesDictionary，随实体 EntityPackage 跨端同步。</summary>
+        static void WriteStateToEntity(Entity entity, BreedingState state)
+        {
+            if (entity == null || state == null) return;
+            try
+            {
+                entity.ValuesDictionary.SetValue("BreedingModState", state.Serialize());
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] 状态写入实体失败: " + e.Message);
+            }
+        }
+
+        /// <summary>从实体 ValuesDictionary 读取同步来的繁殖状态(客户端恢复用)。</summary>
+        static BreedingState ReadStateFromEntity(Entity entity)
+        {
+            if (entity == null) return null;
+            try
+            {
+                string data = entity.ValuesDictionary.GetValue<string>("BreedingModState", null);
+                if (string.IsNullOrEmpty(data)) return null;
+                return BreedingState.Deserialize(data);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// 实体 Add 前(EntityPackage 生成前)回调(由 BreedingModLoader 订阅 BeforeEntityAdded)。
+        /// 权威端：若该实体已有繁殖状态，写入实体 ValuesDictionary，确保随初始 EntityPackage 同步给客户端。
+        /// </summary>
+        public static void OnBeforeEntityAdded(Entity entity)
+        {
+            if (entity == null || !IsAuthority) return;
+            if (s_states.TryGetValue(entity, out BreedingState state))
+            {
+                WriteStateToEntity(entity, state);
+            }
+        }
+
+        /// <summary>服务器端主动推送实体状态给客户端(配对/产仔/喂食等关键变化时调用)。</summary>
+        static void SyncEntityToClients(Entity entity)
+        {
+            if (!IsNetServer || entity == null) return;
+            try
+            {
+                CommonLib.Net.QueuePackage(new EntityPackage(entity));
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] 状态同步发包失败: " + e.Message);
+            }
+        }
 
         /// <summary>渲染钩子(OnModelDrawExtra)用它获取 FontBatch 入队悬浮文字。</summary>
         public static SubsystemModelsRenderer ModelsRenderer => s_modelsRenderer;
@@ -512,13 +579,25 @@ namespace Game
 
             if (s_states.ContainsKey(entity))
             {
-                // OnReadSpawnData 已恢复存档状态，这里保留不覆盖
+                // 已有状态，保留不覆盖
                 return;
             }
 
-            // 自然生成的成体：默认成年。性别用 EntityId 确定性分配(见 RollGender)，
-            // 保证同一实体无论何时被追踪/恢复，性别都一致，不随重进世界/Despawn 循环变化。
-            // TemplateName 存归一化后的名字(不带 _Saddled)，便于交配匹配和体型查找
+            // 联机版跨端同步：先尝试从实体 ValuesDictionary 读取服务器/权威端同步来的状态(客户端恢复用)
+            BreedingState synced = ReadStateFromEntity(entity);
+            if (synced != null)
+            {
+                // 校验模板名一致
+                if (string.Equals(synced.TemplateName, normalizedTemplate, StringComparison.Ordinal))
+                {
+                    s_states[entity] = synced;
+                    CacheAndApplyBoxSize(entity, synced, cfg);
+                    return;
+                }
+            }
+
+            // 权威端(服务器/本地)自然生成成体：默认成年。性别用 EntityId 确定性分配(见 RollGender)
+            // 客户端不在此分支(客户端实体均来自服务器同步)
             BreedingState state = new()
             {
                 TemplateName = normalizedTemplate,
@@ -532,6 +611,9 @@ namespace Game
 
             // 缓存原版 BoxSize/ModelScale 并应用成年体型
             CacheAndApplyBoxSize(entity, state, cfg);
+
+            // 权威端：把状态写入实体 ValuesDictionary，随实体 EntityPackage 同步给客户端
+            WriteStateToEntity(entity, state);
         }
 
         /// <summary>
@@ -849,6 +931,8 @@ namespace Game
             if (cfg?.Enabled != true) return;
             if (s_states.Count == 0) return;
 
+            bool authority = IsAuthority;
+
             // 快照遍历：UpdateFemale/UpdateMale 内部可能增删 s_states(交配/产仔/移除)
             List<KeyValuePair<Entity, BreedingState>> snapshot = new(s_states);
             foreach (KeyValuePair<Entity, BreedingState> kv in snapshot)
@@ -860,8 +944,32 @@ namespace Game
                 SpeciesConfig species = cfg.GetSpecies(state.TemplateName);
                 if (species == null) continue;
 
-                UpdateEntity(entity, state, species, dt);
+                if (authority)
+                {
+                    // 权威端(服务器/本地)：完整繁殖逻辑(求偶/配对/产仔/成长/喂食)
+                    UpdateEntity(entity, state, species, dt);
+                }
+                else
+                {
+                    // 客户端：只算显示状态(求偶/成长/体型)，不配对/不产仔(服务器权威)
+                    UpdateEntityClient(entity, state, species);
+                }
             }
+        }
+
+        /// <summary>客户端只读显示更新：算求偶状态/成长/体型，不推进倒计时、不配对产仔。</summary>
+        static void UpdateEntityClient(Entity entity, BreedingState state, SpeciesConfig species)
+        {
+            // 求偶状态(显示)：基于服务器同步的孕期/恢复/喂食状态 + 当前季节
+            Season currentSeason = s_seasons != null ? s_seasons.Season : Season.Spring;
+            state.IsInEstrus = state.IsAdult
+                && species.ParsedSeasons.Contains(currentSeason)
+                && !state.IsWeak
+                && (!species.RequireFeeding || state.IsFed);
+
+            // 成长推进(用 BirthDay 自动算)与体型显示
+            UpdateGrowth(entity, state, species);
+            UpdateBoxSize(entity, state, species);
         }
 
         /// <summary>更新单只生物。</summary>
@@ -1024,8 +1132,7 @@ namespace Game
             {
                 state.PregnancyRemainingSeconds = species.GestationSeconds;
                 state.PregnancyFatherId = mate.EntityId;
-                state.MatingProximitySeconds = 0f;
-                // 母狼不进入虚弱期，直接怀孕(怀孕期间不会再次交配)
+                state.MatingProximitySeconds = 0f;                // 母狼不进入虚弱期，直接怀孕(怀孕期间不会再次交配)
                 // 分娩后才进入虚弱期
 
                 // 只有公狼进入虚弱期(防止一公多母)
@@ -1040,6 +1147,10 @@ namespace Game
 
                 // 扩展接口事件：通知其他模组(疾病/草药系统等)
                 BreedingEvents.RaiseMatingSuccess(entity, mate);
+
+                // 联机版：配对成功后母体状态(怀孕)同步给客户端
+                WriteStateToEntity(entity, state);
+                SyncEntityToClients(entity);
             }
         }
 
@@ -1262,6 +1373,12 @@ namespace Game
 
                 // 立即应用幼崽体型(成长度=0 → CubBoxScale)
                 ApplyBoxSizeByGrowth(cub, cubState, species, 0f);
+
+                // 联机版：幼崽与母体状态同步给客户端(母体孕期结束/进入恢复期)
+                WriteStateToEntity(cub, cubState);
+                SyncEntityToClients(cub);
+                WriteStateToEntity(mother, motherState);
+                SyncEntityToClients(mother);
             }
             Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.EntityId}, cub#{cub.EntityId}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
 
@@ -1367,6 +1484,10 @@ namespace Game
 
             // 扩展接口事件：通知其他模组(草药系统可在此识别"喂药/喂草"事件)
             BreedingEvents.RaiseFed(entity, species.FedDurationSeconds);
+
+            // 联机版：喂食状态同步给客户端(需喂食物种求偶判定依赖已喂食)
+            WriteStateToEntity(entity, state);
+            SyncEntityToClients(entity);
         }
 
         /// <summary>

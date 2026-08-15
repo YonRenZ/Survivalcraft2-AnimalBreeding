@@ -141,6 +141,13 @@ namespace Game
             Tick(dt);
         }
 
+        /// <summary>实体 Add 前回调：把已确定的繁殖状态写入实体(随 EntityPackage 同步给客户端)。</summary>
+        void OnBeforeEntityAdded(object sender, EntityAddRemoveEventArgs e)
+        {
+            if (e?.Entity == null) return;
+            SubsystemBreeding.OnBeforeEntityAdded(e.Entity);
+        }
+
         /// <summary>联机版核心：每帧检测世界状态 + 实体同步 + 繁殖更新。</summary>
         void Tick(float dt)
         {
@@ -159,6 +166,10 @@ namespace Game
                     SubsystemBreeding.Initialize(project);
                     m_lastProject = project;
 
+                    // 联机版：实体 Add 前(EntityPackage 生成前)把已确定的繁殖状态写入实体，
+                    // 确保客户端通过 EntityPackage 同步时能拿到状态(性别/阶段/孕期/成长等)。
+                    project.BeforeEntityAdded += OnBeforeEntityAdded;
+
                     // 注册每帧更新(双保险之一)
                     if (!m_updateableRegistered)
                     {
@@ -170,6 +181,10 @@ namespace Game
                 // 世界卸载 → 清理
                 else if (project == null && m_lastProject != null)
                 {
+                    if (m_lastProject is GameEntitySystem.Project p)
+                    {
+                        p.BeforeEntityAdded -= OnBeforeEntityAdded;
+                    }
                     SubsystemBreeding.ClearXmlCache();
                     m_lastProject = null;
                     m_updateableRegistered = false;
@@ -261,7 +276,8 @@ namespace Game
                         float adultScale = state.Gender == BreedingGender.Male
                             ? species.AdultMaleBoxScale : species.AdultFemaleBoxScale;
                         float scale = species.CubBoxScale + (adultScale - species.CubBoxScale) * progress;
-                        componentModel.SetBoneTransform(rootBone.Index, Matrix.CreateScale(scale));
+                        // 左乘 scale 保留根骨骼原有的平移/旋转，避免模型错位
+                        componentModel.SetBoneTransform(rootBone.Index, Matrix.CreateScale(scale) * rootBone.Transform);
                         componentModel.CalculateAbsoluteBonesTransforms(camera);
                     }
                 }
