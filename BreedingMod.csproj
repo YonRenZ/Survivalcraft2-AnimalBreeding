@@ -11,6 +11,9 @@
     <Compile Include="Breeding/BreedingConfig.cs" />
     <Compile Include="Breeding/BreedingState.cs" />
     <Compile Include="Breeding/SubsystemBreeding.cs" />
+    <Compile Include="Breeding/BreedingInfoPanel.cs" />
+    <Compile Include="Breeding/InfoLine.cs" />
+    <Compile Include="Breeding/InfoLineBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Engine" HintPath="Quoted/Engine.dll" />

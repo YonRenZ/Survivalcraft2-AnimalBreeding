@@ -20,13 +20,19 @@ namespace Game
     /// 用 SubsystemBreeding.ModelsRenderer.PrimitivesRenderer.FontBatch(...).QueueText(...) 入队文字(layer 1)，
     /// 由 SubsystemModelsRenderer 在 DrawOrder=201 时统一 Flush，不需要自己 Flush。
     /// </summary>
-    public class BreedingModLoader : ModLoader
+    public class BreedingModLoader : ModLoader, IUpdateable
     {
         /// <summary>本模组包名(与 modinfo.json 的 PackageName 一致)，用于读写 ModSettingsManager。</summary>
         const string PackageName = "Survivalcraft.AnimalBreeding";
 
         /// <summary>悬浮文字开关设置项的 Id 链(不含包名，与 modsettings.json 中一致)。</summary>
         static readonly string[] FloatingTextIdPath = { "BreedingDisplaySettings", "FloatingTextEnabled" };
+
+        public UpdateOrder UpdateOrder => UpdateOrder.Default;
+
+        /// <summary>信息面板控件(屏幕下方，显示最后渲染的繁殖生物状态)。</summary>
+        static StackPanelWidget s_infoPanel;
+        static Entity s_lastBreedingEntity;
 
         public override void __ModInitialize()
         {
@@ -56,7 +62,7 @@ namespace Game
         {
             SubsystemBreeding.Initialize(project);
 
-            // 读取模组设置：悬浮文字开关(默认开启)。设置项未注册时 TryGet 返回 false，保持默认 true。
+            // 读取模组设置：悬浮文字开关(默认开启)
             if (ModSettingsManager.TryGet<bool>(out bool enabled, PackageName, FloatingTextIdPath[0], FloatingTextIdPath[1]))
             {
                 SubsystemBreeding.FloatingTextEnabled = enabled;
@@ -65,6 +71,33 @@ namespace Game
             {
                 SubsystemBreeding.FloatingTextEnabled = true;
             }
+
+            // 注册每帧更新(信息面板)
+            SubsystemUpdate subsystemUpdate = project.FindSubsystem<SubsystemUpdate>(true);
+            subsystemUpdate?.AddUpdateable(this);
+
+            // 初始化信息面板
+            SubsystemGameWidgets gameWidgets = project.FindSubsystem<SubsystemGameWidgets>(true);
+            GameWidget gameWidget = gameWidgets?.GameWidgets[0];
+            if (gameWidget != null)
+            {
+                s_infoPanel = new StackPanelWidget
+                {
+                    Direction = LayoutDirection.Horizontal,
+                    HorizontalAlignment = WidgetAlignment.Center,
+                    VerticalAlignment = WidgetAlignment.Far,
+                    Margin = new Vector2(10f, 5f),
+                    IsHitTestVisible = false
+                };
+                gameWidget.Children.Add(s_infoPanel);
+            }
+        }
+
+        public void Update(float dt)
+        {
+            if (s_infoPanel == null || s_lastBreedingEntity == null) return;
+            BreedingInfoPanel.Update(s_infoPanel, s_lastBreedingEntity);
+            s_lastBreedingEntity = null;
         }
 
         /// <summary>
@@ -83,6 +116,12 @@ namespace Game
         /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
         public override void OnProjectDisposed()
         {
+            // 移除信息面板
+            if (s_infoPanel?.ParentWidget != null)
+            {
+                s_infoPanel.ParentWidget.Children.Remove(s_infoPanel);
+            }
+            s_infoPanel = null;
             SubsystemBreeding.ClearXmlCache();
         }
 
@@ -324,6 +363,9 @@ namespace Game
             // 只处理被繁殖系统追踪的生物(非繁殖生物/玩家/船等直接跳过)
             BreedingState state = SubsystemBreeding.GetState(entity);
             if (state == null) return;
+
+            // 记录最后渲染的繁殖生物(用于信息面板)
+            s_lastBreedingEntity = entity;
 
             BreedingConfig cfg = BreedingConfig.Current;
             SpeciesConfig species = cfg?.GetSpecies(state.TemplateName);
