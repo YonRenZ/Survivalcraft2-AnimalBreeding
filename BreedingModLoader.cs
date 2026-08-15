@@ -76,19 +76,12 @@ namespace Game
             SubsystemUpdate subsystemUpdate = project.FindSubsystem<SubsystemUpdate>(true);
             subsystemUpdate?.AddUpdateable(this);
 
-            // 初始化信息面板
+            // 初始化信息面板(屏幕顶部)
             SubsystemGameWidgets gameWidgets = project.FindSubsystem<SubsystemGameWidgets>(true);
             GameWidget gameWidget = gameWidgets?.GameWidgets[0];
             if (gameWidget != null)
             {
-                s_infoPanel = new StackPanelWidget
-                {
-                    Direction = LayoutDirection.Horizontal,
-                    HorizontalAlignment = WidgetAlignment.Center,
-                    VerticalAlignment = WidgetAlignment.Far,
-                    Margin = new Vector2(10f, 5f),
-                    IsHitTestVisible = false
-                };
+                s_infoPanel = BreedingInfoPanel.Create();
                 gameWidget.Children.Add(s_infoPanel);
             }
         }
