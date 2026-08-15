@@ -48,6 +48,7 @@
 
 - **参数含义**：详见 [CONFIG.md](CONFIG.md)
 - **时间规则**：1 游戏天 = 1200 现实秒；大型动物孕期 2 天、小型 1.5 天；成长期 = 孕期 × 3；恢复期 = 孕期 ÷ 2
+- **模组设置**：游戏内 **设置 → 模组设置 → 动物繁殖系统显示设置** 可开关头顶悬浮文字（默认开启），实时生效（`MOD/modsettings.json`）
 - **第三方模组接入**：其他模组在 `MOD/Assets/` 放一份 `BreedingConfig.{ModId}.json` 即可追加物种配置；开启 `OverrideMain: true` 可覆盖主配置物种（提高原版属性），详见 [CONFIG.md](CONFIG.md) 与 [EXTENSION.md](EXTENSION.md)
 - **图鉴生物介绍**：`MOD/Assets/Lang/` 内置 7 种语言的 39 种生物介绍（`SpeciesDescription`）+ 动态基础信息，显示在游戏图鉴中
 
@@ -82,6 +83,7 @@
 │   └── BreedingConfig.cs          # 配置加载与缓存
 ├── MOD/
 │   ├── modinfo.json               # 模组元信息
+│   ├── modsettings.json           # 模组设置（悬浮文字开关）
 │   └── Assets/
 │       ├── BreedingConfig.json    # 运行配置（灰狼块含注释模板）
 │       └── Lang/                  # 7 种语言翻译（悬浮文字 + 图鉴介绍）
