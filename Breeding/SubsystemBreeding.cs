@@ -74,6 +74,12 @@ namespace Game
         static long s_debugFrameCounter;
 
         /// <summary>
+        /// 是否显示头顶悬浮文字(由模组设置 modsettings.json 的 FloatingTextEnabled 控制，默认开启)。
+        /// 在 OnProjectLoaded 时从 ModSettingsManager 读取初值，OnModSettingChanged 时热更新。
+        /// </summary>
+        public static bool FloatingTextEnabled = true;
+
+        /// <summary>
         /// 由 BreedingModLoader.OnProjectLoaded 调用，缓存子系统引用并加载配置。
         /// 注意：ModLoader 是单例，静态字段跨世界保留，必须在此清空旧世界的残留状态。
         /// </summary>

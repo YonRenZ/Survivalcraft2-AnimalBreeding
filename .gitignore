@@ -1,10 +1,6 @@
 # 编译产物
 bin/
 obj/
-<<<<<<< HEAD
-Quoted/
-=======
->>>>>>> 810ff6454eb39cea75ccfaf27d4bc83476805784
 
 # 引用的 DLL(不入库，由开发者本地放置)
 Quoted/*.dll
@@ -14,10 +10,7 @@ Quoted/*.dll
 .vscode/
 *.user
 *.suo
-<<<<<<< HEAD
 *.bak
-=======
->>>>>>> 810ff6454eb39cea75ccfaf27d4bc83476805784
 
 # 临时文件
 *.log

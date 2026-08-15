@@ -25,6 +25,13 @@
       "Time": "孕期：{0}天  成长期：{1}天  恢复期：{2}天"
     },
 
+    "Settings": {
+      "PageName": "显示设置",
+      "PageTitle": "动物繁殖系统显示设置",
+      "FloatingTextName": "显示头顶悬浮文字",
+      "FloatingTextDesc": "开启后显示生物头顶的性别、状态和成长进度等信息"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "灰狼：群居掠食者，冬季求偶，无需喂食，发情期攻击范围大增。",
       "Wolf_Coyote": "郊狼：小型掠食者，冬季求偶，无需喂食，体型比灰狼小。",

@@ -25,6 +25,13 @@
       "Time": "Gestation: {0}d  Growth: {1}d  Recovery: {2}d"
     },
 
+    "Settings": {
+      "PageName": "Display",
+      "PageTitle": "Animal Breeding Display Settings",
+      "FloatingTextName": "Show Floating Text",
+      "FloatingTextDesc": "When enabled, shows gender, status and growth progress above creatures"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "Gray wolf: pack predator, courts in winter, no feeding required, aggressive during courtship.",
       "Wolf_Coyote": "Coyote: small predator, courts in winter, no feeding required, smaller than the gray wolf.",

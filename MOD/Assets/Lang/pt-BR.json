@@ -25,6 +25,13 @@
       "Time": "Gestação: {0}d  Crescimento: {1}d  Recuperação: {2}d"
     },
 
+    "Settings": {
+      "PageName": "Exibi00e700e3o",
+      "PageTitle": "Configura00e700f5es de exibi00e700e3o do Animal Breeding",
+      "FloatingTextName": "Mostrar texto flutuante",
+      "FloatingTextDesc": "Quando ativado, mostra g00eanero, status e progresso de crescimento sobre as criaturas"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "Lobo cinzento: predador em matilha, corteja no inverno, sem necessidade de alimentar, agressivo durante o cortejo.",
       "Wolf_Coyote": "Coiote: predador pequeno, corteja no inverno, sem necessidade de alimentar, menor que o lobo cinzento.",

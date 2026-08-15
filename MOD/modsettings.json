@@ -1,0 +1,17 @@
+[
+  {
+    "Id": "BreedingDisplaySettings",
+    "Name": "[BreedingMod/Settings:PageName]",
+    "Title": "[BreedingMod/Settings:PageTitle]",
+    "Items": [
+      {
+        "Id": "FloatingTextEnabled",
+        "Name": "[BreedingMod/Settings:FloatingTextName]",
+        "Description": "[BreedingMod/Settings:FloatingTextDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      }
+    ]
+  }
+]

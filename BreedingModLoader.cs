@@ -22,6 +22,12 @@ namespace Game
     /// </summary>
     public class BreedingModLoader : ModLoader
     {
+        /// <summary>本模组包名(与 modinfo.json 的 PackageName 一致)，用于读写 ModSettingsManager。</summary>
+        const string PackageName = "Survivalcraft.AnimalBreeding";
+
+        /// <summary>悬浮文字开关设置项的 Id 链(不含包名，与 modsettings.json 中一致)。</summary>
+        static readonly string[] FloatingTextIdPath = { "BreedingDisplaySettings", "FloatingTextEnabled" };
+
         public override void __ModInitialize()
         {
             // 动物繁殖系统相关钩子：实体生命周期、存档读写、每帧更新、攻击力修正、模型绘制扩展
@@ -49,6 +55,29 @@ namespace Game
         public override void OnProjectLoaded(Project project)
         {
             SubsystemBreeding.Initialize(project);
+
+            // 读取模组设置：悬浮文字开关(默认开启)。设置项未注册时 TryGet 返回 false，保持默认 true。
+            if (ModSettingsManager.TryGet<bool>(out bool enabled, PackageName, FloatingTextIdPath[0], FloatingTextIdPath[1]))
+            {
+                SubsystemBreeding.FloatingTextEnabled = enabled;
+            }
+            else
+            {
+                SubsystemBreeding.FloatingTextEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// 模组设置项值变更通知(由 ModSettingsManager.Set 精准分发到本 loader)。
+        /// idPath 为完整 path 去掉首段包名，对应 modsettings.json 中的 Id 链。
+        /// </summary>
+        public override void OnModSettingChanged(string[] idPath, object value)
+        {
+            if (idPath == null || idPath.Length != 2 || value is not bool b) return;
+            if (idPath[0] == FloatingTextIdPath[0] && idPath[1] == FloatingTextIdPath[1])
+            {
+                SubsystemBreeding.FloatingTextEnabled = b;
+            }
         }
 
         /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
@@ -283,6 +312,8 @@ namespace Game
         {
             skip = false;
             if (!SubsystemBreeding.Initialized) return;
+            // 模组设置关闭了悬浮文字 → 整体跳过渲染
+            if (!SubsystemBreeding.FloatingTextEnabled) return;
 
             SubsystemModelsRenderer modelsRenderer = SubsystemBreeding.ModelsRenderer;
             if (modelsRenderer == null) return;

@@ -25,6 +25,13 @@
       "Time": "Gestación: {0}d  Crecimiento: {1}d  Recuperación: {2}d"
     },
 
+    "Settings": {
+      "PageName": "Pantalla",
+      "PageTitle": "Ajustes de pantalla de Animal Breeding",
+      "FloatingTextName": "Mostrar texto flotante",
+      "FloatingTextDesc": "Cuando est00e1 activado, muestra g00e9nero, estado y progreso de crecimiento sobre las criaturas"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "Lobo gris: depredador en manada, corteja en invierno, sin necesidad de alimentar, agresivo durante el cortejo.",
       "Wolf_Coyote": "Coyote: depredador pequeño, corteja en invierno, sin necesidad de alimentar, más pequeño que el lobo gris.",

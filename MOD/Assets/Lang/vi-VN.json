@@ -25,6 +25,13 @@
       "Time": "Mang thai: {0}ngày  Tăng trưởng: {1}ngày  Hồi phục: {2}ngày"
     },
 
+    "Settings": {
+      "PageName": "Hi1ec3n th1ecb",
+      "PageTitle": "C00e0i 01111eb7t hi1ec3n th1ecb Animal Breeding",
+      "FloatingTextName": "Hi1ec3n th1ecb v0103n b1ea3n n1ed5i",
+      "FloatingTextDesc": "Khi b1eadt, hi1ec3n th1ecb gi1edbi t00ednh, tr1ea1ng th00e1i v00e0 ti1ebfn tr00ecnh tr01b01edfng th00e0nh tr00ean c00e1c sinh v1eadt"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "Sói xám: động vật săn mồi theo bầy, ve vãn vào mùa đông, không cần cho ăn, hung dữ khi ve vãn.",
       "Wolf_Coyote": "Sói đồng cỏ: động vật săn mồi nhỏ, ve vãn vào mùa đông, không cần cho ăn, nhỏ hơn sói xám.",

@@ -25,6 +25,13 @@
       "Time": "Gestare: {0}z  Creștere: {1}z  Recuperare: {2}z"
     },
 
+    "Settings": {
+      "PageName": "Afi0219are",
+      "PageTitle": "Set0103ri de afi0219are Animal Breeding",
+      "FloatingTextName": "Afi0219eaz0103 textul plutitor",
+      "FloatingTextDesc": "C00e2nd este activat, afi0219eaz0103 gen, stare 0219i progres de cre0219tere deasupra creaturilor"
+    },
+
     "SpeciesDescription": {
       "Wolf_Gray": "Lup cenușiu: prădător în haită, curtează iarna, fără hrană, agresiv în timpul curtării.",
       "Wolf_Coyote": "Coyote: prădător mic, curtează iarna, fără hrană, mai mic decât lupul cenușiu.",
