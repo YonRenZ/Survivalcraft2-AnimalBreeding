@@ -87,14 +87,8 @@ namespace Game
             }
             else
             {
+                // 未装 Neorxna 时不显示顶部信息面板，仅保留头顶悬浮文字
                 s_useNeorxnaNui = false;
-                SubsystemGameWidgets gameWidgets = project.FindSubsystem<SubsystemGameWidgets>(true);
-                GameWidget gameWidget = gameWidgets?.GameWidgets[0];
-                if (gameWidget != null)
-                {
-                    s_infoPanel = BreedingInfoPanel.Create();
-                    gameWidget.Children.Add(s_infoPanel);
-                }
             }
         }
 
