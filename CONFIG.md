@@ -193,6 +193,20 @@
 > }
 > ```
 
+### 下蛋拦截参数（会下蛋物种专用）
+
+控制原版 `ComponentLayEggBehavior`（鸵鸟/食火鸡等会下蛋的生物）是否被繁殖系统接管后停止产蛋。**只拦截公体**，母体仍可正常下蛋（符合生物学）。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `BlockEggLaying` | bool | `false` | 是否阻止**公体**的原版下蛋行为。`true` 时公体不产蛋，母体正常下蛋。适用于食火鸡（`Cassowary`）、鸵鸟（`Ostrich`）。 |
+
+> **示例**（食火鸡/鸵鸟开启公体产蛋拦截）：
+> ```json
+> "Cassowary": { "BlockEggLaying": true },
+> "Ostrich":   { "BlockEggLaying": true }
+> ```
+
 ---
 
 ## 四、已支持的物种
@@ -404,3 +418,4 @@
 | `RequireFeeding` | `OnFactorsUpdate` 发情判定 | 是否需要喂食才发情 |
 | `FeedItem` | `Normalize` 解析 / `OnEatPickable` 匹配 | 喂食物品方块类名 |
 | `FedDurationSeconds` | `OnEatPickable` 喂食成功时 | 已喂食状态持续秒数 |
+| `BlockEggLaying` | `OnFactorsUpdate` 下蛋拦截 | 是否拦截公体原版下蛋行为 |

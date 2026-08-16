@@ -1,6 +1,3 @@
-// 动物繁殖系统运行配置（仅参数，便于游戏解析）。
-// 全部 39 种生物的说明/时间规则/测试要点见仓库 SPECIES.md（生物图鉴）与 CONFIG.md。
-// 时间换算：1 游戏天 = 1200 现实秒(20分钟)；大型动物孕期 2 天、小型 1.5 天；成长期=孕期×3；虚弱=孕期÷2。
 {
   "Enabled": true,
   "Species": {
@@ -234,6 +231,7 @@
       "BlockInteractDuringBreeding": true,
       "BlockInteractDuringCub": true,
       "ConsumeSaddleOnBlocked": false,
+      "BlockEggLaying": true,
       "RequireFeeding": true,
       "FeedItem": "PumpkinBlock",
       "FedDurationSeconds": 600.0
@@ -798,6 +796,7 @@
       "BlockInteractDuringBreeding": true,
       "BlockInteractDuringCub": true,
       "ConsumeSaddleOnBlocked": false,
+      "BlockEggLaying": true,
       "RequireFeeding": false
     }
   }

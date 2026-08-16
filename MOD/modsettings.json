@@ -7,7 +7,109 @@
       {
         "Id": "FloatingTextEnabled",
         "Name": "[BreedingMod/Settings:FloatingTextName]",
-        "Description": "[BreedingMod/Settings:FloatingTextDesc]",
+        "Description": "icon.webp",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "FloatingTextFontScale",
+        "Name": "[BreedingMod/Settings:FontScaleName]",
+        "Description": "[BreedingMod/Settings:FontScaleDesc]",
+        "Type": "float",
+        "Default": 1.0,
+        "Widget": "NumberSliderSettingWidget",
+        "WidgetProperties": { "MinValue": 0.5, "MaxValue": 3.0, "Granularity": 0.05, "DecimalPlaces": 2 }
+      },
+      {
+        "Id": "FloatingTextVerticalOffset",
+        "Name": "[BreedingMod/Settings:VerticalOffsetName]",
+        "Description": "[BreedingMod/Settings:VerticalOffsetDesc]",
+        "Type": "float",
+        "Default": 0.0,
+        "Widget": "NumberSliderSettingWidget",
+        "WidgetProperties": { "MinValue": -0.5, "MaxValue": 1.0, "Granularity": 0.05, "DecimalPlaces": 2 }
+      },
+      { "Separator": true },
+
+      {
+        "Id": "ShowName",
+        "Name": "[BreedingMod/Settings:ShowNameName]",
+        "Description": "[BreedingMod/Settings:ShowNameDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "ShowGender",
+        "Name": "[BreedingMod/Settings:ShowGenderName]",
+        "Description": "[BreedingMod/Settings:ShowGenderDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "ShowStage",
+        "Name": "[BreedingMod/Settings:ShowStageName]",
+        "Description": "[BreedingMod/Settings:ShowStageDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "ShowStatus",
+        "Name": "[BreedingMod/Settings:ShowStatusName]",
+        "Description": "[BreedingMod/Settings:ShowStatusDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "ShowGrowth",
+        "Name": "[BreedingMod/Settings:ShowGrowthName]",
+        "Description": "[BreedingMod/Settings:ShowGrowthDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      { "Separator": true },
+
+      {
+        "Id": "NuiEnabled",
+        "Name": "[BreedingMod/Settings:NuiEnabledName]",
+        "Description": "[BreedingMod/Settings:NuiEnabledDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "NuiShowGender",
+        "Name": "[BreedingMod/Settings:NuiShowGenderName]",
+        "Description": "[BreedingMod/Settings:NuiShowGenderDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "NuiShowStage",
+        "Name": "[BreedingMod/Settings:NuiShowStageName]",
+        "Description": "[BreedingMod/Settings:NuiShowStageDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "NuiShowStatus",
+        "Name": "[BreedingMod/Settings:NuiShowStatusName]",
+        "Description": "[BreedingMod/Settings:NuiShowStatusDesc]",
+        "Type": "bool",
+        "Default": true,
+        "Widget": "BoolButtonSettingWidget"
+      },
+      {
+        "Id": "NuiShowGrowth",
+        "Name": "[BreedingMod/Settings:NuiShowGrowthName]",
+        "Description": "[BreedingMod/Settings:NuiShowGrowthDesc]",
         "Type": "bool",
         "Default": true,
         "Widget": "BoolButtonSettingWidget"

@@ -388,6 +388,13 @@ namespace Game
         /// </summary>
         public float FedDurationSeconds { get; set; } = 600.0f;
 
+        /// <summary>
+        /// 是否拦截该生物的原版下蛋行为(ComponentLayEggBehavior)。true=阻止产蛋。
+        /// 适用于食火鸡(Cassowary)、鸵鸟(Ostrich)等会下蛋的生物。
+        /// 繁殖系统接管后，这些生物改为直接分娩幼崽，不再丢蛋在地上。
+        /// </summary>
+        public bool BlockEggLaying { get; set; } = false;
+
         // ==================== 运行时(不序列化) ====================
 
         [JsonIgnore]

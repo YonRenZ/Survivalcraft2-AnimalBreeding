@@ -15,3 +15,9 @@ Quoted/*.dll
 # 临时文件
 *.log
 *.tmp
+
+# 打包产物
+*.scmod
+
+# Neorxna 相关（集成代码不入库）
+Breeding/NeorxnaBreedingNui.cs

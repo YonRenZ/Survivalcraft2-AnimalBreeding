@@ -14,6 +14,8 @@
     <Compile Include="Breeding/BreedingInfoPanel.cs" />
     <Compile Include="Breeding/InfoLine.cs" />
     <Compile Include="Breeding/InfoLineBuilder.cs" />
+    <Compile Include="Breeding/NeorxnaBreedingNui.cs" />
+    <Compile Include="Breeding/BreedingDisplaySettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Engine" HintPath="Quoted/Engine.dll" />

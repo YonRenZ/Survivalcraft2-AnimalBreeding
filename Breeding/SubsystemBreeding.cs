@@ -911,6 +911,18 @@ namespace Game
             // 5. 仇恨范围 factor(幼崽/怀孕母狼=0，发情期×倍率)
             ApplyChaseRangeFactor(factors, state, species);
 
+            // 5b. 拦截原版下蛋行为(食火鸡/鸵鸟等配置了 BlockEggLaying 的物种)
+            // 仅公体拦截下蛋(母体可以正常产蛋，符合生物学)
+            if (species.BlockEggLaying && state.Gender == BreedingGender.Male)
+            {
+                ComponentLayEggBehavior layEgg = entity.FindComponent<ComponentLayEggBehavior>();
+                if (layEgg != null)
+                {
+                    // 设为零可阻止下蛋行为激活，每帧刷新确保不会中途产蛋
+                    layEgg.m_importanceLevel = 0f;
+                }
+            }
+
             // 6. 性别特定更新
             if (state.Gender == BreedingGender.Female)
             {

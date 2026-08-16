@@ -1,77 +1,99 @@
 {
-  "BreedingMod": {
-    "Gender": {
-      "Male": "♂Macho",
-      "Female": "♀Fêmea"
-    },
-    "Stage": {
-      "Cub": "Filhote",
-      "Adult": "Adulto"
-    },
-    "Status": {
-      "Pregnant": "Grávida({0}s)",
-      "Weak": "Fraco({0}s)",
-      "EstrusMating": "Cio(Cobertura {0}s)",
-      "Estrus": "Cio",
-      "NeedFeeding": "Precisa comida",
-      "NotInSeason": "Fora de temporada",
-      "Growing": "Crescendo"
-    },
-    "Growth": "Crescimento {0}%",
-
-    "Stats": {
-      "Attack": "Ataque: Macho {0}x / Fêmea {1}x",
-      "Size": "Tamanho: Macho {0}x / Fêmea {1}x",
-      "Time": "Gestação: {0}d  Crescimento: {1}d  Recuperação: {2}d"
-    },
-
-    "Settings": {
-      "PageName": "Exibi00e700e3o",
-      "PageTitle": "Configura00e700f5es de exibi00e700e3o do Animal Breeding",
-      "FloatingTextName": "Mostrar texto flutuante",
-      "FloatingTextDesc": "Quando ativado, mostra g00eanero, status e progresso de crescimento sobre as criaturas"
-    },
-
-    "SpeciesDescription": {
-      "Wolf_Gray": "Lobo cinzento: predador em matilha, corteja no inverno, sem necessidade de alimentar, agressivo durante o cortejo.",
-      "Wolf_Coyote": "Coiote: predador pequeno, corteja no inverno, sem necessidade de alimentar, menor que o lobo cinzento.",
-      "Hyena": "Hiena: predador carniceiro em matilha, corteja na primavera, sem necessidade de alimentar.",
-      "Lion": "Leão: predador de topo em matilha, corteja no verão, sem necessidade de alimentar, poder de ataque muito alto.",
-      "Tiger": "Tigre: predador de topo solitário, corteja no outono, sem necessidade de alimentar, poder de ataque muito alto.",
-      "Tiger_White": "Tigre branco: variante rara do tigre, corteja no outono, sem necessidade de alimentar.",
-      "Leopard": "Leopardo: predador ágil, corteja no outono, sem necessidade de alimentar.",
-      "Jaguar": "Onça-pintada: predador tropical, corteja no verão, sem necessidade de alimentar.",
-      "Bear": "Urso pardo: grande predador onívoro, corteja no verão, sem necessidade de alimentar, poder de ataque alto.",
-      "Bear_Brown": "Urso pardo: grande predador onívoro, corteja no verão, sem necessidade de alimentar, similar ao urso pardo.",
-      "Bear_Black": "Urso negro: predador onívoro médio, corteja no verão, sem necessidade de alimentar, menor que o urso pardo.",
-      "Bear_Polar": "Urso polar: grande predador ártico, corteja no inverno, sem necessidade de alimentar, poder de ataque extremo.",
-      "Horse_Black": "Cavalo preto: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
-      "Horse_Bay": "Cavalo baio: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
-      "Horse_Chestnut": "Cavalo castanho: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
-      "Horse_Palomino": "Cavalo palomino: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
-      "Horse_White": "Cavalo branco: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
-      "Donkey": "Burro: animal herbívoro, pode ser selado e montado, corteja na primavera, alimentar com grama alta.",
-      "Camel": "Camelo: montaria herbívora, corteja no verão, alimentar com grama alta, gestação mais longa.",
-      "Reindeer": "Rena: montaria herbívora ártica, corteja no inverno, alimentar com grama alta.",
-      "Ostrich": "Avestruz: montaria herbívora tropical, corteja na primavera, alimentar com abóbora, reproduz rápido.",
-      "Cassowary": "Casuar: grande ave não voadora, corteja no verão, sem necessidade de alimentar, agressivo.",
-      "Cow": "Vaca: gado, corteja na primavera e no verão, alimentar com grama alta, pode criar com touros.",
-      "Bull": "Touro: gado, corteja na primavera e no verão, alimentar com grama alta, pode criar com vacas.",
-      "Cow_Black": "Vaca preta: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com qualquer touro.",
-      "Cow_Brown": "Vaca marrom: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com qualquer touro.",
-      "Bull_Brown": "Touro marrom: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
-      "Bull_Black": "Touro preto: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
-      "Bull_White": "Touro branco: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
-      "Alpaca": "Alpaca: herbívora dócil, corteja na primavera e no outono, alimentar com grama alta, pode ser tosquiada.",
-      "Alpaca_Shorn": "Alpaca tosquiada: variante após tosquia, corteja na primavera e no outono, sem necessidade de alimentar.",
-      "Alpaca_White": "Alpaca branca: variante de alpaca, corteja na primavera e no outono, sem necessidade de alimentar.",
-      "Gnu": "Gnu: herbívoro em manada, corteja no outono, alimentar com grama alta.",
-      "Bison": "Bisão: grande herbívoro, corteja no outono, alimentar com grama alta, moderadamente agressivo.",
-      "Moose": "Alce: grande herbívoro ártico, corteja no outono, sem necessidade de alimentar, os machos são maiores.",
-      "Rhino": "Rinoceronte: grande herbívoro, corteja no verão, sem necessidade de alimentar, agressivo.",
-      "Giraffe": "Girafa: herbívoro muito grande, corteja no verão, sem necessidade de alimentar, gestação mais longa.",
-      "Zebra": "Zebra: herbívoro em manada, corteja na primavera, sem necessidade de alimentar, cautelosa.",
-      "Wildboar": "Javali: animal onívoro médio, corteja no outono, sem necessidade de alimentar."
-    }
-  }
+   "BreedingMod" : {
+      "Gender" : {
+         "Female" : "♀Fêmea",
+         "Male" : "♂Macho"
+      },
+      "Growth" : "Crescimento {0}%",
+      "GrowthLine" : "{0} · Crescimento {1}%",
+      "Settings" : {
+         "FloatingTextDesc" : "Quando ativado, mostra g00eanero, status e progresso de crescimento sobre as criaturas",
+         "FloatingTextName" : "Mostrar texto flutuante",
+         "FontScaleDesc" : "Escala do texto flutuante sobre as criaturas (0.5~3x)",
+         "FontScaleName" : "Tamanho da fonte do texto flutuante",
+         "NuiEnabledDesc" : "Injeta a info de reprodução no painel superior do Neorxna",
+         "NuiEnabledName" : "Ativar injeção no painel Neorxna",
+         "NuiShowGenderDesc" : "Mostra o gênero no painel",
+         "NuiShowGenderName" : "Mostrar gênero",
+         "NuiShowGrowthDesc" : "Mostra a porcentagem e a barra de crescimento no painel",
+         "NuiShowGrowthName" : "Mostrar barra de progresso",
+         "NuiShowStageDesc" : "Mostra o estágio (filhote/adulto) no painel",
+         "NuiShowStageName" : "Mostrar estágio de crescimento",
+         "NuiShowStatusDesc" : "Mostra o status (cortejo/gravidez/recuperação) no painel",
+         "NuiShowStatusName" : "Mostrar status de reprodução",
+         "PageName" : "Exibi00e700e3o",
+         "PageTitle" : "Configura00e700f5es de exibi00e700e3o do Animal Breeding",
+         "ShowGenderDesc" : "Mostra o gênero no painel",
+         "ShowGenderName" : "Mostrar gênero",
+         "ShowGrowthDesc" : "Mostra a porcentagem e a barra de crescimento no painel",
+         "ShowGrowthName" : "Mostrar barra de progresso",
+         "ShowNameDesc" : "Mostra o nome no painel",
+         "ShowNameName" : "Mostrar nome",
+         "ShowStageDesc" : "Mostra o estágio (filhote/adulto) no painel",
+         "ShowStageName" : "Mostrar estágio de crescimento",
+         "ShowStatusDesc" : "Mostra o status (cortejo/gravidez/recuperação) no painel",
+         "ShowStatusName" : "Mostrar status de reprodução",
+         "VerticalOffsetDesc" : "Move o texto flutuante para cima/baixo (positivo = cima) para que modelos grandes não o cubram",
+         "VerticalOffsetName" : "Deslocamento vertical do texto"
+      },
+      "SpeciesDescription" : {
+         "Alpaca" : "Alpaca: herbívora dócil, corteja na primavera e no outono, alimentar com grama alta, pode ser tosquiada.",
+         "Alpaca_Shorn" : "Alpaca tosquiada: variante após tosquia, corteja na primavera e no outono, sem necessidade de alimentar.",
+         "Alpaca_White" : "Alpaca branca: variante de alpaca, corteja na primavera e no outono, sem necessidade de alimentar.",
+         "Bear" : "Urso pardo: grande predador onívoro, corteja no verão, sem necessidade de alimentar, poder de ataque alto.",
+         "Bear_Black" : "Urso negro: predador onívoro médio, corteja no verão, sem necessidade de alimentar, menor que o urso pardo.",
+         "Bear_Brown" : "Urso pardo: grande predador onívoro, corteja no verão, sem necessidade de alimentar, similar ao urso pardo.",
+         "Bear_Polar" : "Urso polar: grande predador ártico, corteja no inverno, sem necessidade de alimentar, poder de ataque extremo.",
+         "Bison" : "Bisão: grande herbívoro, corteja no outono, alimentar com grama alta, moderadamente agressivo.",
+         "Bull" : "Touro: gado, corteja na primavera e no verão, alimentar com grama alta, pode criar com vacas.",
+         "Bull_Black" : "Touro preto: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
+         "Bull_Brown" : "Touro marrom: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
+         "Bull_White" : "Touro branco: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com vacas.",
+         "Camel" : "Camelo: montaria herbívora, corteja no verão, alimentar com grama alta, gestação mais longa.",
+         "Cassowary" : "Casuar: grande ave não voadora, corteja no verão, sem necessidade de alimentar, agressivo.",
+         "Cow" : "Vaca: gado, corteja na primavera e no verão, alimentar com grama alta, pode criar com touros.",
+         "Cow_Black" : "Vaca preta: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com qualquer touro.",
+         "Cow_Brown" : "Vaca marrom: variante de gado, corteja na primavera e no verão, sem necessidade de alimentar, cria com qualquer touro.",
+         "Donkey" : "Burro: animal herbívoro, pode ser selado e montado, corteja na primavera, alimentar com grama alta.",
+         "Giraffe" : "Girafa: herbívoro muito grande, corteja no verão, sem necessidade de alimentar, gestação mais longa.",
+         "Gnu" : "Gnu: herbívoro em manada, corteja no outono, alimentar com grama alta.",
+         "Horse_Bay" : "Cavalo baio: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
+         "Horse_Black" : "Cavalo preto: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
+         "Horse_Chestnut" : "Cavalo castanho: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
+         "Horse_Palomino" : "Cavalo palomino: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
+         "Horse_White" : "Cavalo branco: montaria herbívora dócil, corteja na primavera, alimentar com grama alta, os garanhões brigam pelas éguas.",
+         "Hyena" : "Hiena: predador carniceiro em matilha, corteja na primavera, sem necessidade de alimentar.",
+         "Jaguar" : "Onça-pintada: predador tropical, corteja no verão, sem necessidade de alimentar.",
+         "Leopard" : "Leopardo: predador ágil, corteja no outono, sem necessidade de alimentar.",
+         "Lion" : "Leão: predador de topo em matilha, corteja no verão, sem necessidade de alimentar, poder de ataque muito alto.",
+         "Moose" : "Alce: grande herbívoro ártico, corteja no outono, sem necessidade de alimentar, os machos são maiores.",
+         "Ostrich" : "Avestruz: montaria herbívora tropical, corteja na primavera, alimentar com abóbora, reproduz rápido.",
+         "Reindeer" : "Rena: montaria herbívora ártica, corteja no inverno, alimentar com grama alta.",
+         "Rhino" : "Rinoceronte: grande herbívoro, corteja no verão, sem necessidade de alimentar, agressivo.",
+         "Tiger" : "Tigre: predador de topo solitário, corteja no outono, sem necessidade de alimentar, poder de ataque muito alto.",
+         "Tiger_White" : "Tigre branco: variante rara do tigre, corteja no outono, sem necessidade de alimentar.",
+         "Wildboar" : "Javali: animal onívoro médio, corteja no outono, sem necessidade de alimentar.",
+         "Wolf_Coyote" : "Coiote: predador pequeno, corteja no inverno, sem necessidade de alimentar, menor que o lobo cinzento.",
+         "Wolf_Gray" : "Lobo cinzento: predador em matilha, corteja no inverno, sem necessidade de alimentar, agressivo durante o cortejo.",
+         "Zebra" : "Zebra: herbívoro em manada, corteja na primavera, sem necessidade de alimentar, cautelosa."
+      },
+      "Stage" : {
+         "Adult" : "Adulto",
+         "Cub" : "Filhote"
+      },
+      "Stats" : {
+         "Attack" : "Ataque: Macho {0}x / Fêmea {1}x",
+         "Size" : "Tamanho: Macho {0}x / Fêmea {1}x",
+         "Time" : "Gestação: {0}d  Crescimento: {1}d  Recuperação: {2}d"
+      },
+      "Status" : {
+         "Estrus" : "Cio",
+         "EstrusMating" : "Cio(Cobertura {0}s)",
+         "Growing" : "Crescendo",
+         "NeedFeeding" : "Precisa comida",
+         "NotInSeason" : "Fora de temporada",
+         "Pregnant" : "Grávida({0}s)",
+         "Weak" : "Fraco({0}s)"
+      }
+   }
 }

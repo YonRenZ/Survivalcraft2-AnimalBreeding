@@ -18,6 +18,7 @@
       "Growing": "Growing"
     },
     "Growth": "Growth {0}%",
+    "GrowthLine": "{0} · Growth {1}%",
 
     "Stats": {
       "Attack": "Attack: Male {0}x / Female {1}x",
@@ -29,7 +30,33 @@
       "PageName": "Display",
       "PageTitle": "Animal Breeding Display Settings",
       "FloatingTextName": "Show Floating Text",
-      "FloatingTextDesc": "When enabled, shows gender, status and growth progress above creatures"
+      "FloatingTextDesc": "When enabled, shows gender, status and growth progress above creatures",
+      "FontScaleName": "Floating Text Font Size",
+      "FontScaleDesc": "Scale of the floating text above creatures (0.5~3x)",
+      "VerticalOffsetName": "Floating Text Vertical Offset",
+      "VerticalOffsetDesc": "Move floating text up/down (positive = up) so large models don't cover it",
+      
+      "ShowNameName": "Show Name",
+      "ShowNameDesc": "Show creature name in the info panel",
+      "ShowGenderName": "Show Gender",
+      "ShowGenderDesc": "Show gender in the info panel",
+      "ShowStageName": "Show Growth Stage",
+      "ShowStageDesc": "Show growth stage (cub/adult) in the info panel",
+      "ShowStatusName": "Show Breeding Status",
+      "ShowStatusDesc": "Show breeding status (courting/pregnant/recovering) in the info panel",
+      "ShowGrowthName": "Show Growth Progress Bar",
+      "ShowGrowthDesc": "Show growth percentage and progress bar in the info panel",
+      
+      "NuiEnabledName": "Enable Neorxna Panel Injection",
+      "NuiEnabledDesc": "Inject breeding info into Neorxna's top info panel",
+      "NuiShowGenderName": "Show Gender",
+      "NuiShowGenderDesc": "Append gender after the name in Neorxna panel",
+      "NuiShowStageName": "Show Growth Stage",
+      "NuiShowStageDesc": "Show growth stage in the Neorxna panel",
+      "NuiShowStatusName": "Show Breeding Status",
+      "NuiShowStatusDesc": "Show breeding status in the Neorxna panel",
+      "NuiShowGrowthName": "Show Growth Progress Bar",
+      "NuiShowGrowthDesc": "Show growth percentage and progress bar in the Neorxna panel"
     },
 
     "SpeciesDescription": {

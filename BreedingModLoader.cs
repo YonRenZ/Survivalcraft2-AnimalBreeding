@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Xml.Linq;
 using Engine;
 using Engine.Graphics;
@@ -30,8 +31,11 @@ namespace Game
 
         public UpdateOrder UpdateOrder => UpdateOrder.Default;
 
-        /// <summary>信息面板控件(屏幕下方，显示最后渲染的繁殖生物状态)。</summary>
+                /// <summary>信息面板控件(屏幕顶部，准星指向生物时显示)。</summary>
         static StackPanelWidget s_infoPanel;
+        /// <summary>是否使用 Neorxna NUInfoPanelWidget 注入模式(有 Neorxna 时优先，不再画自带面板)。</summary>
+        static bool s_useNeorxnaNui;
+        Project m_project;
         static Entity s_lastBreedingEntity;
 
         public override void __ModInitialize()
@@ -61,36 +65,77 @@ namespace Game
         public override void OnProjectLoaded(Project project)
         {
             SubsystemBreeding.Initialize(project);
+            m_project = project;
 
-            // 读取模组设置：悬浮文字开关(默认开启)
-            if (ModSettingsManager.TryGet<bool>(out bool enabled, PackageName, FloatingTextIdPath[0], FloatingTextIdPath[1]))
-            {
-                SubsystemBreeding.FloatingTextEnabled = enabled;
-            }
-            else
-            {
-                SubsystemBreeding.FloatingTextEnabled = true;
-            }
+            // 读取全部显示设置(悬浮文字/元素开关/NeorxnaUI)
+            BreedingDisplaySettings.Load();
+            SubsystemBreeding.FloatingTextEnabled = BreedingDisplaySettings.FloatingTextEnabled;
 
             // 注册每帧更新(信息面板)
             SubsystemUpdate subsystemUpdate = project.FindSubsystem<SubsystemUpdate>(true);
             subsystemUpdate?.AddUpdateable(this);
 
-            // 初始化信息面板(屏幕顶部)
-            SubsystemGameWidgets gameWidgets = project.FindSubsystem<SubsystemGameWidgets>(true);
-            GameWidget gameWidget = gameWidgets?.GameWidgets[0];
-            if (gameWidget != null)
+            // 信息显示策略(NeorxnaIE 同款)：
+            //   装了 Neorxna → 订阅 OnNIPBodyRaycast，把性别/成长/状态塞进 Neorxna 现成 NUInfoPanelWidget
+            //   没装 Neorxna  → 回退到自带面板
+            bool neorxnaAvailable = NeorxnaBreedingNui.IsAvailable;
+            if (neorxnaAvailable)
             {
-                s_infoPanel = BreedingInfoPanel.Create();
-                gameWidget.Children.Add(s_infoPanel);
+                s_useNeorxnaNui = true;
+                NeorxnaBreedingNui.EnsureSubscribed(project);
+                Log.Information("[Breeding] 检测到 Neorxna，启用 NUInfoPanelWidget 注入模式");
+            }
+            else
+            {
+                s_useNeorxnaNui = false;
+                SubsystemGameWidgets gameWidgets = project.FindSubsystem<SubsystemGameWidgets>(true);
+                GameWidget gameWidget = gameWidgets?.GameWidgets[0];
+                if (gameWidget != null)
+                {
+                    s_infoPanel = BreedingInfoPanel.Create();
+                    gameWidget.Children.Add(s_infoPanel);
+                }
             }
         }
 
+                /// <summary>每帧：射线检测玩家准星指向的生物，更新信息面板。</summary>
         public void Update(float dt)
         {
-            if (s_infoPanel == null || s_lastBreedingEntity == null) return;
-            BreedingInfoPanel.Update(s_infoPanel, s_lastBreedingEntity);
-            s_lastBreedingEntity = null;
+            // Neorxna 注入模式下，面板更新由 NeorxnaHUD.OnNIPBodyRaycast 驱动，这里无需自带射线。
+            if (s_useNeorxnaNui || s_infoPanel == null) return;
+
+            Entity target = null;
+            if (m_project != null)
+            {
+                try
+                {
+                    SubsystemPlayers players = m_project.FindSubsystem<SubsystemPlayers>(true);
+                    if (players != null)
+                    {
+                        foreach (ComponentPlayer player in players.ComponentPlayers)
+                        {
+                            ComponentMiner miner = player.ComponentMiner;
+                            Camera camera = player.GameWidget?.ActiveCamera;
+                            if (miner == null || camera == null) continue;
+
+                            // 准星中心射线，检测生物
+                            Ray3 ray = new Ray3(camera.ViewPosition, camera.ViewDirection);
+                            BodyRaycastResult? result = miner.Raycast<BodyRaycastResult>(ray, RaycastMode.Interaction);
+                            if (result.HasValue && result.Value.ComponentBody != null)
+                            {
+                                target = result.Value.ComponentBody.Entity;
+                            }
+                            break; // 只处理第一个玩家
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Warning("[Breeding] 准星射线检测异常: " + e.Message);
+                }
+            }
+
+            BreedingInfoPanel.Update(s_infoPanel, target);
         }
 
         /// <summary>
@@ -99,22 +144,28 @@ namespace Game
         /// </summary>
         public override void OnModSettingChanged(string[] idPath, object value)
         {
-            if (idPath == null || idPath.Length != 2 || value is not bool b) return;
-            if (idPath[0] == FloatingTextIdPath[0] && idPath[1] == FloatingTextIdPath[1])
-            {
-                SubsystemBreeding.FloatingTextEnabled = b;
-            }
+            // 设置变更：重读全部显示设置(悬浮文字/元素开关/NeorxnaUI)
+            BreedingDisplaySettings.Load();
+            SubsystemBreeding.FloatingTextEnabled = BreedingDisplaySettings.FloatingTextEnabled;
         }
 
         /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
         public override void OnProjectDisposed()
         {
-            // 移除信息面板
+            // Neorxna 注入模式：取消事件订阅
+            if (s_useNeorxnaNui)
+            {
+                NeorxnaBreedingNui.Unsubscribe();
+            }
+
+            // 移除信息面板(仅非 Neorxna 注入模式)
             if (s_infoPanel?.ParentWidget != null)
             {
                 s_infoPanel.ParentWidget.Children.Remove(s_infoPanel);
             }
             s_infoPanel = null;
+            s_useNeorxnaNui = false;
+            m_project = null;
             SubsystemBreeding.ClearXmlCache();
         }
 
@@ -374,14 +425,16 @@ namespace Game
             if (health != null && health.DeathTime.HasValue) return;
 
             // 头顶世界坐标(参考原版 ComponentDisplayHealthAndNameBehavior)
-            // 整体下移到头顶上方 0.5 格(原 0.9，下移 0.4)；行距 0.15 格
+            // 整体下移到头顶上方 0.5 格；行距随字号缩放
             float height = body.BoxSize.Y;
-            Vector3 headPos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.5f, 0f);
-            Vector3 line2Pos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.35f, 0f);
-            Vector3 line3Pos = body.Position + Vector3.UnitY * height + new Vector3(0f, 0.20f, 0f);
+            float fontScale = Math.Clamp(BreedingDisplaySettings.FloatingTextFontScale, 0.2f, 4f);
+            float lineStep = 0.15f * fontScale;
+            // 悬浮文字整体上下偏移(正=上移，负=下移)，避免大模型遮挡
+            float baseOffset = 0.5f + Math.Clamp(BreedingDisplaySettings.FloatingTextVerticalOffset, -0.5f, 1f);
 
-            // 转视图空间
-            Vector3 vector = Vector3.Transform(headPos, camera.ViewMatrix);
+            // 转视图空间(以头顶最高行为基准判断是否在相机后方)
+            Vector3 topPos = body.Position + Vector3.UnitY * (height + baseOffset);
+            Vector3 vector = Vector3.Transform(topPos, camera.ViewMatrix);
             if (vector.Z >= 0f) return; // 在相机后方
 
             // 距离淡出：16m 内全显，19m 外全隐
@@ -389,15 +442,36 @@ namespace Game
             Color color = Color.Lerp(Color.White, Color.Transparent, fade);
             if (color.A <= 6) return;
 
-            // 视图空间 right/down 向量(参考原版 OnModelRendererDrawExtra)
+            // 视图空间 right/down 向量(随字号缩放；参考原版 OnModelRendererDrawExtra)
             Vector3 right = Vector3.TransformNormal(
-                0.005f * Vector3.Normalize(Vector3.Cross(camera.ViewDirection, camera.ViewUp)),
+                0.005f * fontScale * Vector3.Normalize(Vector3.Cross(camera.ViewDirection, camera.ViewUp)),
                 camera.ViewMatrix);
-            Vector3 down = Vector3.TransformNormal(-0.005f * Vector3.UnitY, camera.ViewMatrix);
+            Vector3 down = Vector3.TransformNormal(-0.005f * fontScale * Vector3.UnitY, camera.ViewMatrix);
 
             // 用原版同款字体(LabelWidget.BitmapFont)
             BitmapFont font = LabelWidget.BitmapFont;
             double currentDay = SubsystemBreeding.GetCurrentDay();
+            float progress = state.GetGrowthProgress(currentDay, species.CubDurationDays);
+            int percent = (int)Math.Round(progress * 100f);
+
+            string name = creature.DisplayName;
+            string gender = state.GetGenderDisplayName();
+            string stage = state.GetStageDisplayName();
+            string status = state.GetBreedingStatus(species);
+
+            // ==================== 构建显示行(依元素开关) ====================
+                        List<string> lines = new();
+                        // 默认三行模式(各元素独立开关)：名称+性别 / 阶段·状态 / 成长值
+                        string l1 = (BreedingDisplaySettings.ShowName ? name : "")
+                                  + (BreedingDisplaySettings.ShowGender ? gender : "");
+                        if (!string.IsNullOrWhiteSpace(l1)) lines.Add(l1.Trim());
+                        string l2 = (BreedingDisplaySettings.ShowStage ? stage : "")
+                                  + ((BreedingDisplaySettings.ShowStage && BreedingDisplaySettings.ShowStatus) ? " · " : "")
+                                  + (BreedingDisplaySettings.ShowStatus ? status : "");
+                        if (!string.IsNullOrWhiteSpace(l2)) lines.Add(l2.Trim());
+                        if (BreedingDisplaySettings.ShowGrowth)
+                            lines.Add(string.Format(LanguageControl.Get("BreedingMod", "Growth"), percent.ToString()));
+                        if (lines.Count == 0) return;
 
             // 字体批次(layer 1，由 SubsystemModelsRenderer 在 DrawOrder=201 统一 Flush)
             FontBatch3D fontBatch = modelsRenderer.PrimitivesRenderer.FontBatch(
@@ -407,48 +481,40 @@ namespace Game
                 BlendState.AlphaBlend,
                 SamplerState.LinearClamp);
 
-            // ==================== 第1行：性别 + 生物名称 ====================
-            string line1 = state.GetGenderDisplayName() + " " + creature.DisplayName;
-            fontBatch.QueueText(line1, vector, right, down, color, TextAnchor.HorizontalCenter | TextAnchor.Bottom);
-
-            // ==================== 第2行：成长阶段 + 繁殖状态 ====================
-            Vector3 vector2 = Vector3.Transform(line2Pos, camera.ViewMatrix);
-            if (vector2.Z < 0f)
+            // ==================== 逐行渲染(从头顶向下排列) ====================
+            for (int i = 0; i < lines.Count; i++)
             {
-                string line2 = state.GetStageDisplayName() + " | " + state.GetBreedingStatus(species);
-                fontBatch.QueueText(line2, vector2, right, down, color * 0.85f, TextAnchor.HorizontalCenter | TextAnchor.Bottom);
-            }
+                Vector3 wp = body.Position + Vector3.UnitY * (height + baseOffset - i * lineStep);
+                Vector3 vp = Vector3.Transform(wp, camera.ViewMatrix);
+                if (vp.Z >= 0f) continue;
 
-            // ==================== 第3行：成长进度百分比 + 右侧图形进度条(同一行) ====================
-            Vector3 vector3 = Vector3.Transform(line3Pos, camera.ViewMatrix);
-            if (vector3.Z < 0f)
-            {
-                float progress = state.GetGrowthProgress(currentDay, species.CubDurationDays);
-                int percent = (int)Math.Round(progress * 100f);
-                string line3 = string.Format(LanguageControl.Get("BreedingMod", "Growth"), percent.ToString());
+                // 默认模式最后一行(成长值)：右侧追加图形进度条
+                bool last = (i == lines.Count - 1);
+                if (last && BreedingDisplaySettings.ShowGrowth)
+                {
+                    // 测量文字尺寸(视图空间单位)，用于定位进度条起点 + 整体水平居中 + 垂直对齐
+                    Vector2 textSize = font.MeasureText(lines[i], new Vector2(right.Length(), down.Length()), Vector2.Zero);
+                    float textWidthPx = textSize.X / right.Length();  // 文字宽(像素，与 barWidth 同尺度)
+                    float textHeightPx = textSize.Y / down.Length();  // 文字高(像素，与 barHeight 同尺度)
+                    const float barWidth = 100f;     // 进度条总宽(像素)
+                    const float barHeight = 9f;      // 进度条高度(像素)
+                    const float gapPx = 6f;          // 文字与进度条之间的间隙(像素)
+                    float totalWidthPx = textWidthPx + gapPx + barWidth;
+                    float halfTotalPx = totalWidthPx * 0.5f;
 
-                // 测量文字尺寸(视图空间单位)，用于定位进度条起点 + 整体水平居中 + 垂直对齐
-                Vector2 textSize = font.MeasureText(line3, new Vector2(right.Length(), down.Length()), Vector2.Zero);
-                float textWidthPx = textSize.X / right.Length();  // 文字宽(像素，与 barWidth 同尺度)
-                float textHeightPx = textSize.Y / down.Length();  // 文字高(像素，与 barHeight 同尺度)
-                const float barWidth = 100f;     // 进度条总宽(像素)
-                const float barHeight = 9f;      // 进度条高度(像素)
-                const float gapPx = 6f;          // 文字与进度条之间的间隙(像素)
-                float totalWidthPx = textWidthPx + gapPx + barWidth;
-                float halfTotalPx = totalWidthPx * 0.5f;
+                    // 文字左对齐：起点 = vp 左移 halfTotalPx(让整体居中)，垂直底部对齐
+                    Vector3 textPos = vp + right * -halfTotalPx;
+                    fontBatch.QueueText(lines[i], textPos, right, down, color * 0.85f, TextAnchor.Left | TextAnchor.Bottom);
 
-                // 文字左对齐：起点 = vector3 左移 halfTotalPx(让整体居中)，垂直底部对齐
-                // 注: TextAnchor.Bottom 时 textPos 是文字左下角，文字向上延伸绘制
-                Vector3 textPos = vector3 + right * -halfTotalPx;
-                fontBatch.QueueText(line3, textPos, right, down, color * 0.85f, TextAnchor.Left | TextAnchor.Bottom);
-
-                // 进度条：紧跟文字右侧 gapPx 像素处；垂直居中于文字再额外上移 3.0 像素
-                //   textPos 是文字左下角，文字顶部 = textPos + up * textHeightPx
-                //   基准：进度条顶部 = 文字顶部 - (文字高 - 进度条高) / 2 (垂直居中)
-                //   微调：再沿 up 方向偏移 3.0 像素(进度条相对文字再上移，补偿字体基线偏移)
-                float vAlignOffsetPx = (textHeightPx - barHeight) * 0.5f + 3.0f;
-                Vector3 barOrigin = textPos + right * (textWidthPx + gapPx) + down * -vAlignOffsetPx;
-                DrawProgressBar(modelsRenderer, barOrigin, right, down, progress, color);
+                    // 进度条：紧跟文字右侧 gapPx 像素处；垂直居中于文字再额外上移 3.0 像素
+                    float vAlignOffsetPx = (textHeightPx - barHeight) * 0.5f + 3.0f;
+                    Vector3 barOrigin = textPos + right * (textWidthPx + gapPx) + down * -vAlignOffsetPx;
+                    DrawProgressBar(modelsRenderer, barOrigin, right, down, progress, color);
+                }
+                else
+                {
+                    fontBatch.QueueText(lines[i], vp, right, down, color * (i == 0 ? 1f : 0.85f), TextAnchor.HorizontalCenter | TextAnchor.Bottom);
+                }
             }
         }
 

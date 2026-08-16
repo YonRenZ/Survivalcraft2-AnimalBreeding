@@ -6,19 +6,31 @@ using GameEntitySystem;
 namespace Game
 {
     /// <summary>
-    /// 生物信息面板(屏幕顶部)。显示当前追踪生物的：名称+性别、血量条、繁殖状态。
-    /// 血量条从 ComponentHealth 读取，颜色随血量变化(绿/黄/红)。
+    /// 生物繁殖信息面板(屏幕顶部，仅未装 Neorxna 时的回退方案)。
+    /// 仅当玩家准星对准一只「可繁殖生物」(被繁殖系统追踪、BreedingState 非空)时显示。
+    /// 各元素(名称/性别/成长阶段/繁殖状态/成长进度条)可由模组设置独立开关；
+    /// 繁殖状态显示在成长阶段【后面】(如 "幼崽期 · 求偶中")。
     /// </summary>
     public static class BreedingInfoPanel
     {
         const float HpBarWidth = 120f;
         const float HpBarHeight = 8f;
+        const float GrowthBarWidth = 120f;
+        const float GrowthBarHeight = 8f;
+
+        static readonly Color MaleColor = new Color(120, 180, 255);
+        static readonly Color FemaleColor = new Color(255, 140, 200);
+        static readonly Color CubColor = new Color(255, 200, 80);
+        static readonly Color AdultColor = new Color(90, 210, 110);
 
         static LabelWidget s_nameLabel;
         static RectangleWidget s_hpBar;
-        static LabelWidget s_statusLabel;
+        static LabelWidget s_stageStatusLabel;
+        static LabelWidget s_growthLabel;
+        static CanvasWidget s_growthCanvas;
+        static RectangleWidget s_growthBar;
 
-        /// <summary>创建信息面板控件(竖排：名称 / 血量条 / 繁殖状态)。</summary>
+        /// <summary>创建信息面板控件(竖排：名称+性别 / 血量条 / 阶段·状态 / 成长值+进度条)。</summary>
         public static StackPanelWidget Create()
         {
             var panel = new StackPanelWidget
@@ -30,7 +42,7 @@ namespace Game
                 IsHitTestVisible = false
             };
 
-            // 名称 + 性别
+            // 1. 名称 + 性别(性别色高亮)
             s_nameLabel = new LabelWidget
             {
                 FontScale = 0.85f,
@@ -41,7 +53,7 @@ namespace Game
             };
             panel.AddChildren(s_nameLabel);
 
-            // 血量条(CanvasWidget 叠加背景 + 前景)
+            // 2. 血量条(CanvasWidget 叠加背景 + 前景)
             var hpCanvas = new CanvasWidget
             {
                 Size = new Vector2(HpBarWidth, HpBarHeight),
@@ -62,29 +74,66 @@ namespace Game
                 Size = new Vector2(HpBarWidth, HpBarHeight),
                 IsHitTestVisible = false
             };
-            hpCanvas.AddChildren(s_hpBar); // 前景覆盖背景(前景后添加，在上层)
+            hpCanvas.AddChildren(s_hpBar);
             panel.AddChildren(hpCanvas);
 
-            // 繁殖状态
-            s_statusLabel = new LabelWidget
+            // 3. 成长阶段 · 繁殖状态(状态在阶段后)
+            s_stageStatusLabel = new LabelWidget
             {
                 FontScale = 0.75f,
                 DropShadow = true,
-                Color = Color.Gray,
+                Color = Color.White,
                 HorizontalAlignment = WidgetAlignment.Center,
                 IsHitTestVisible = false
             };
-            panel.AddChildren(s_statusLabel);
+            panel.AddChildren(s_stageStatusLabel);
+
+            // 4. 成长值文本 + 成长进度条
+            s_growthLabel = new LabelWidget
+            {
+                FontScale = 0.75f,
+                DropShadow = true,
+                Color = Color.White,
+                HorizontalAlignment = WidgetAlignment.Center,
+                IsHitTestVisible = false
+            };
+            panel.AddChildren(s_growthLabel);
+
+            s_growthCanvas = new CanvasWidget
+            {
+                Size = new Vector2(GrowthBarWidth, GrowthBarHeight),
+                HorizontalAlignment = WidgetAlignment.Center,
+                IsHitTestVisible = false
+            };
+            s_growthCanvas.AddChildren(new RectangleWidget
+            {
+                FillColor = new Color(0, 0, 0, 140),
+                OutlineColor = new Color(120, 160, 120, 200),
+                OutlineThickness = 1f,
+                Size = new Vector2(GrowthBarWidth, GrowthBarHeight),
+                IsHitTestVisible = false
+            });
+            s_growthBar = new RectangleWidget
+            {
+                FillColor = AdultColor,
+                Size = new Vector2(GrowthBarWidth, GrowthBarHeight),
+                IsHitTestVisible = false
+            };
+            s_growthCanvas.AddChildren(s_growthBar);
+            panel.AddChildren(s_growthCanvas);
 
             return panel;
         }
 
-        /// <summary>更新面板内容。</summary>
+        /// <summary>更新面板内容。仅当准星指向「可繁殖生物」时显示，否则隐藏。</summary>
         public static void Update(ContainerWidget panel, Entity targetEntity)
         {
-            if (panel == null || s_nameLabel == null || s_hpBar == null || s_statusLabel == null) return;
+            if (panel == null || s_nameLabel == null || s_hpBar == null
+                || s_stageStatusLabel == null || s_growthLabel == null || s_growthCanvas == null || s_growthBar == null) return;
 
-            if (targetEntity == null)
+            // 非可繁殖生物(未追踪)或未指向任何生物 → 隐藏面板
+            BreedingState state = targetEntity != null ? SubsystemBreeding.GetState(targetEntity) : null;
+            if (state == null)
             {
                 panel.IsVisible = false;
                 return;
@@ -93,40 +142,43 @@ namespace Game
 
             ComponentCreature creature = targetEntity.FindComponent<ComponentCreature>();
             ComponentHealth health = targetEntity.FindComponent<ComponentHealth>();
-            BreedingState state = SubsystemBreeding.GetState(targetEntity);
-
-            // 名称 + 性别
             string name = creature != null ? creature.DisplayName : (targetEntity.ValuesDictionary.DatabaseObject?.Name ?? "?");
-            string gender = state != null ? state.GetGenderDisplayName() : "";
-            s_nameLabel.Text = (gender + " " + name).Trim();
-            s_nameLabel.Color = state != null ? Color.White : Color.Gray;
+            string gender = state.GetGenderDisplayName();
 
-            // 血量条
+            // ==================== 1. 名称 + 性别(性别拼到名称后) ====================
+            string nameText = (BreedingDisplaySettings.ShowName ? name : "")
+                            + (BreedingDisplaySettings.ShowGender ? gender : "");
+            s_nameLabel.Text = nameText.Trim();
+            s_nameLabel.IsVisible = nameText.Length > 0;
+            s_nameLabel.Color = state.Gender == BreedingGender.Male ? MaleColor : FemaleColor;
+
+            // ==================== 2. 血量条(始终显示) ====================
             float hp = health != null ? health.Health : 100f;
-            float ratio = Math.Clamp(hp / 100f, 0f, 1f);
-            s_hpBar.Size = new Vector2(HpBarWidth * ratio, HpBarHeight);
-            s_hpBar.FillColor = ratio > 0.5f ? Color.Green : (ratio > 0.25f ? Color.Yellow : Color.Red);
+            float hpRatio = Math.Clamp(hp / 100f, 0f, 1f);
+            s_hpBar.Size = new Vector2(HpBarWidth * hpRatio, HpBarHeight);
+            s_hpBar.FillColor = hpRatio > 0.5f ? Color.Green : (hpRatio > 0.25f ? Color.Yellow : Color.Red);
 
-            // 繁殖状态
-            if (state != null)
-            {
-                BreedingConfig cfg = BreedingConfig.Current;
-                SpeciesConfig species = cfg?.GetSpecies(state.TemplateName);
-                if (species != null)
-                {
-                    Color c = Color.Gray;
-                    string status;
-                    if (state.IsInEstrus) { status = LanguageControl.Get("BreedingMod", "Status", "Estrus"); c = new Color(255, 69, 0); }
-                    else if (state.PregnancyRemainingSeconds > 0f) { status = string.Format(LanguageControl.Get("BreedingMod", "Status", "Pregnant"), state.PregnancyRemainingSeconds.ToString("F0")); c = new Color(255, 192, 203); }
-                    else if (state.IsWeak) { status = string.Format(LanguageControl.Get("BreedingMod", "Status", "Weak"), state.WeaknessRemainingSeconds.ToString("F0")); }
-                    else if (species.RequireFeeding && !state.IsFed) { status = LanguageControl.Get("BreedingMod", "Status", "NeedFeeding"); c = Color.Yellow; }
-                    else { status = LanguageControl.Get("BreedingMod", "Status", "NotInSeason"); }
-                    s_statusLabel.Text = status;
-                    s_statusLabel.Color = c;
-                }
-                else s_statusLabel.Text = "";
-            }
-            else s_statusLabel.Text = "";
+            // ==================== 3. 成长阶段 · 繁殖状态(状态在阶段后) ====================
+            BreedingConfig cfg = BreedingConfig.Current;
+            SpeciesConfig species = cfg?.GetSpecies(state.TemplateName);
+            string stage = state.GetStageDisplayName();
+            string status = species != null ? state.GetBreedingStatus(species) : "";
+            string ss = (BreedingDisplaySettings.ShowStage ? stage : "")
+                      + ((BreedingDisplaySettings.ShowStage && BreedingDisplaySettings.ShowStatus) ? " · " : "")
+                      + (BreedingDisplaySettings.ShowStatus ? status : "");
+            s_stageStatusLabel.Text = ss.Trim();
+            s_stageStatusLabel.IsVisible = ss.Length > 0;
+
+            // ==================== 4. 成长值 + 成长进度条 ====================
+            double currentDay = SubsystemBreeding.GetCurrentDay();
+            float growth = state.GetGrowthProgress(currentDay, species != null ? species.CubDurationDays : 0f);
+            int percent = (int)Math.Round(growth * 100f);
+            bool showGrowth = BreedingDisplaySettings.ShowGrowth;
+            s_growthLabel.Text = string.Format(LanguageControl.Get("BreedingMod", "Growth"), percent.ToString());
+            s_growthLabel.IsVisible = showGrowth;
+            s_growthCanvas.IsVisible = showGrowth;
+            s_growthBar.Size = new Vector2(GrowthBarWidth * Math.Clamp(growth, 0f, 1f), GrowthBarHeight);
+            s_growthBar.FillColor = state.IsAdult ? AdultColor : CubColor;
         }
     }
 }

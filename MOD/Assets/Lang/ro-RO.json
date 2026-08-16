@@ -1,77 +1,99 @@
 {
-  "BreedingMod": {
-    "Gender": {
-      "Male": "♂Mascul",
-      "Female": "♀Femelă"
-    },
-    "Stage": {
-      "Cub": "Pui",
-      "Adult": "Adult"
-    },
-    "Status": {
-      "Pregnant": "Gravidă({0}s)",
-      "Weak": "Slăbit({0}s)",
-      "EstrusMating": "Călduri(Montă {0}s)",
-      "Estrus": "Călduri",
-      "NeedFeeding": "Necesită hrană",
-      "NotInSeason": "În afara sezonului",
-      "Growing": "Crește"
-    },
-    "Growth": "Creștere {0}%",
-
-    "Stats": {
-      "Attack": "Atac: Mascul {0}x / Femelă {1}x",
-      "Size": "Mărime: Mascul {0}x / Femelă {1}x",
-      "Time": "Gestare: {0}z  Creștere: {1}z  Recuperare: {2}z"
-    },
-
-    "Settings": {
-      "PageName": "Afi0219are",
-      "PageTitle": "Set0103ri de afi0219are Animal Breeding",
-      "FloatingTextName": "Afi0219eaz0103 textul plutitor",
-      "FloatingTextDesc": "C00e2nd este activat, afi0219eaz0103 gen, stare 0219i progres de cre0219tere deasupra creaturilor"
-    },
-
-    "SpeciesDescription": {
-      "Wolf_Gray": "Lup cenușiu: prădător în haită, curtează iarna, fără hrană, agresiv în timpul curtării.",
-      "Wolf_Coyote": "Coyote: prădător mic, curtează iarna, fără hrană, mai mic decât lupul cenușiu.",
-      "Hyena": "Hienă: prădător scavenger în haită, curtează primăvara, fără hrană.",
-      "Lion": "Leu: prădător de top în haită, curtează vara, fără hrană, putere de atac foarte mare.",
-      "Tiger": "Tigru: prădător de top solitar, curtează toamna, fără hrană, putere de atac foarte mare.",
-      "Tiger_White": "Tigru alb: variantă rară a tigrului, curtează toamna, fără hrană.",
-      "Leopard": "Leopard: prădător agil, curtează toamna, fără hrană.",
-      "Jaguar": "Jaguar: prădător tropical, curtează vara, fără hrană.",
-      "Bear": "Urs grizzly: prădător mare omnivor, curtează vara, fără hrană, putere de atac mare.",
-      "Bear_Brown": "Urs brun: prădător mare omnivor, curtează vara, fără hrană, similar ursului grizzly.",
-      "Bear_Black": "Urs negru: prădător omnivor mediu, curtează vara, fără hrană, mai mic decât ursul brun.",
-      "Bear_Polar": "Urs polar: prădător arctic mare, curtează iarna, fără hrană, putere de atac extremă.",
-      "Horse_Black": "Cal negru: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
-      "Horse_Bay": "Cal șarg: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
-      "Horse_Chestnut": "Cal castaniu: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
-      "Horse_Palomino": "Cal palomino: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
-      "Horse_White": "Cal alb: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
-      "Donkey": "Măgar: animal erbivor, poate fi înșeuat și călărit, curtează primăvara, hrănire cu iarbă înaltă.",
-      "Camel": "Cămilă: montură erbivoră, curtează vara, hrănire cu iarbă înaltă, gestație mai lungă.",
-      "Reindeer": "Ren: montură erbivoră arctică, curtează iarna, hrănire cu iarbă înaltă.",
-      "Ostrich": "Struț: montură erbivoră tropicală, curtează primăvara, hrănire cu dovleac, se reproduce repede.",
-      "Cassowary": "Cazuar: pasăre mare nezburătoare, curtează vara, fără hrană, agresiv.",
-      "Cow": "Vacă: animale de fermă, curtează primăvara și vara, hrănire cu iarbă înaltă, poate crește cu tauri.",
-      "Bull": "Taur: animale de fermă, curtează primăvara și vara, hrănire cu iarbă înaltă, poate crește cu vaci.",
-      "Cow_Black": "Vacă neagră: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu orice taur.",
-      "Cow_Brown": "Vacă maro: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu orice taur.",
-      "Bull_Brown": "Taur maro: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
-      "Bull_Black": "Taur negru: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
-      "Bull_White": "Taur alb: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
-      "Alpaca": "Alpacă: erbivoră blândă, curtează primăvara și toamna, hrănire cu iarbă înaltă, poate fi tunsă.",
-      "Alpaca_Shorn": "Alpacă tunsă: variantă după tundere, curtează primăvara și toamna, fără hrană.",
-      "Alpaca_White": "Alpacă albă: variantă de alpacă, curtează primăvara și toamna, fără hrană.",
-      "Gnu": "Gnu: erbivor în turmă, curtează toamna, hrănire cu iarbă înaltă.",
-      "Bison": "Bizon: erbivor mare, curtează toamna, hrănire cu iarbă înaltă, moderat agresiv.",
-      "Moose": "Elan: erbivor arctic mare, curtează toamna, fără hrană, masculii sunt mai mari.",
-      "Rhino": "Rinocer: erbivor mare, curtează vara, fără hrană, agresiv.",
-      "Giraffe": "Girafă: erbivor foarte mare, curtează vara, fără hrană, gestație mai lungă.",
-      "Zebra": "Zebră: erbivor în turmă, curtează primăvara, fără hrană, precaută.",
-      "Wildboar": "Mistreț: animal omnivor mediu, curtează toamna, fără hrană."
-    }
-  }
+   "BreedingMod" : {
+      "Gender" : {
+         "Female" : "♀Femelă",
+         "Male" : "♂Mascul"
+      },
+      "Growth" : "Creștere {0}%",
+      "GrowthLine" : "{0} · Creștere {1}%",
+      "Settings" : {
+         "FloatingTextDesc" : "C00e2nd este activat, afi0219eaz0103 gen, stare 0219i progres de cre0219tere deasupra creaturilor",
+         "FloatingTextName" : "Afi0219eaz0103 textul plutitor",
+         "FontScaleDesc" : "Scala textului plutitor deasupra creaturilor (0.5~3x)",
+         "FontScaleName" : "Dimensiunea fontului textului plutitor",
+         "NuiEnabledDesc" : "Injectează info de reproducere în panoul superior Neorxna",
+         "NuiEnabledName" : "Activează injecția în panoul Neorxna",
+         "NuiShowGenderDesc" : "Afișează genul în panou",
+         "NuiShowGenderName" : "Afișează genul",
+         "NuiShowGrowthDesc" : "Afișează procentul și bara de creștere în panou",
+         "NuiShowGrowthName" : "Afișează bara de progres",
+         "NuiShowStageDesc" : "Afișează stadiul (pui/adult) în panou",
+         "NuiShowStageName" : "Afișează stadiul de creștere",
+         "NuiShowStatusDesc" : "Afișează starea (curtare/sarcină/recuperare) în panou",
+         "NuiShowStatusName" : "Afișează starea de reproducere",
+         "PageName" : "Afi0219are",
+         "PageTitle" : "Set0103ri de afi0219are Animal Breeding",
+         "ShowGenderDesc" : "Afișează genul în panou",
+         "ShowGenderName" : "Afișează genul",
+         "ShowGrowthDesc" : "Afișează procentul și bara de creștere în panou",
+         "ShowGrowthName" : "Afișează bara de progres",
+         "ShowNameDesc" : "Afișează numele în panou",
+         "ShowNameName" : "Afișează numele",
+         "ShowStageDesc" : "Afișează stadiul (pui/adult) în panou",
+         "ShowStageName" : "Afișează stadiul de creștere",
+         "ShowStatusDesc" : "Afișează starea (curtare/sarcină/recuperare) în panou",
+         "ShowStatusName" : "Afișează starea de reproducere",
+         "VerticalOffsetDesc" : "Mută textul plutitor sus/jos (pozitiv = sus) ca un model mare să nu-l acopere",
+         "VerticalOffsetName" : "Deplasarea verticală a textului"
+      },
+      "SpeciesDescription" : {
+         "Alpaca" : "Alpacă: erbivoră blândă, curtează primăvara și toamna, hrănire cu iarbă înaltă, poate fi tunsă.",
+         "Alpaca_Shorn" : "Alpacă tunsă: variantă după tundere, curtează primăvara și toamna, fără hrană.",
+         "Alpaca_White" : "Alpacă albă: variantă de alpacă, curtează primăvara și toamna, fără hrană.",
+         "Bear" : "Urs grizzly: prădător mare omnivor, curtează vara, fără hrană, putere de atac mare.",
+         "Bear_Black" : "Urs negru: prădător omnivor mediu, curtează vara, fără hrană, mai mic decât ursul brun.",
+         "Bear_Brown" : "Urs brun: prădător mare omnivor, curtează vara, fără hrană, similar ursului grizzly.",
+         "Bear_Polar" : "Urs polar: prădător arctic mare, curtează iarna, fără hrană, putere de atac extremă.",
+         "Bison" : "Bizon: erbivor mare, curtează toamna, hrănire cu iarbă înaltă, moderat agresiv.",
+         "Bull" : "Taur: animale de fermă, curtează primăvara și vara, hrănire cu iarbă înaltă, poate crește cu vaci.",
+         "Bull_Black" : "Taur negru: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
+         "Bull_Brown" : "Taur maro: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
+         "Bull_White" : "Taur alb: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu vaci.",
+         "Camel" : "Cămilă: montură erbivoră, curtează vara, hrănire cu iarbă înaltă, gestație mai lungă.",
+         "Cassowary" : "Cazuar: pasăre mare nezburătoare, curtează vara, fără hrană, agresiv.",
+         "Cow" : "Vacă: animale de fermă, curtează primăvara și vara, hrănire cu iarbă înaltă, poate crește cu tauri.",
+         "Cow_Black" : "Vacă neagră: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu orice taur.",
+         "Cow_Brown" : "Vacă maro: variantă de fermă, curtează primăvara și vara, fără hrană, crește cu orice taur.",
+         "Donkey" : "Măgar: animal erbivor, poate fi înșeuat și călărit, curtează primăvara, hrănire cu iarbă înaltă.",
+         "Giraffe" : "Girafă: erbivor foarte mare, curtează vara, fără hrană, gestație mai lungă.",
+         "Gnu" : "Gnu: erbivor în turmă, curtează toamna, hrănire cu iarbă înaltă.",
+         "Horse_Bay" : "Cal șarg: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
+         "Horse_Black" : "Cal negru: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
+         "Horse_Chestnut" : "Cal castaniu: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
+         "Horse_Palomino" : "Cal palomino: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
+         "Horse_White" : "Cal alb: montură erbivoră blândă, curtează primăvara, hrănire cu iarbă înaltă, armăsarii se luptă pentru iepe.",
+         "Hyena" : "Hienă: prădător scavenger în haită, curtează primăvara, fără hrană.",
+         "Jaguar" : "Jaguar: prădător tropical, curtează vara, fără hrană.",
+         "Leopard" : "Leopard: prădător agil, curtează toamna, fără hrană.",
+         "Lion" : "Leu: prădător de top în haită, curtează vara, fără hrană, putere de atac foarte mare.",
+         "Moose" : "Elan: erbivor arctic mare, curtează toamna, fără hrană, masculii sunt mai mari.",
+         "Ostrich" : "Struț: montură erbivoră tropicală, curtează primăvara, hrănire cu dovleac, se reproduce repede.",
+         "Reindeer" : "Ren: montură erbivoră arctică, curtează iarna, hrănire cu iarbă înaltă.",
+         "Rhino" : "Rinocer: erbivor mare, curtează vara, fără hrană, agresiv.",
+         "Tiger" : "Tigru: prădător de top solitar, curtează toamna, fără hrană, putere de atac foarte mare.",
+         "Tiger_White" : "Tigru alb: variantă rară a tigrului, curtează toamna, fără hrană.",
+         "Wildboar" : "Mistreț: animal omnivor mediu, curtează toamna, fără hrană.",
+         "Wolf_Coyote" : "Coyote: prădător mic, curtează iarna, fără hrană, mai mic decât lupul cenușiu.",
+         "Wolf_Gray" : "Lup cenușiu: prădător în haită, curtează iarna, fără hrană, agresiv în timpul curtării.",
+         "Zebra" : "Zebră: erbivor în turmă, curtează primăvara, fără hrană, precaută."
+      },
+      "Stage" : {
+         "Adult" : "Adult",
+         "Cub" : "Pui"
+      },
+      "Stats" : {
+         "Attack" : "Atac: Mascul {0}x / Femelă {1}x",
+         "Size" : "Mărime: Mascul {0}x / Femelă {1}x",
+         "Time" : "Gestare: {0}z  Creștere: {1}z  Recuperare: {2}z"
+      },
+      "Status" : {
+         "Estrus" : "Călduri",
+         "EstrusMating" : "Călduri(Montă {0}s)",
+         "Growing" : "Crește",
+         "NeedFeeding" : "Necesită hrană",
+         "NotInSeason" : "În afara sezonului",
+         "Pregnant" : "Gravidă({0}s)",
+         "Weak" : "Slăbit({0}s)"
+      }
+   }
 }

@@ -18,6 +18,7 @@
       "Growing": "成长中"
     },
     "Growth": "成长 {0}%",
+    "GrowthLine": "{0} · 成长 {1}%",
 
     "Stats": {
       "Attack": "攻击力：公 {0}× / 母 {1}×",
@@ -27,9 +28,35 @@
 
     "Settings": {
       "PageName": "显示设置",
-      "PageTitle": "动物繁殖系统显示设置",
+      "PageTitle": "动物繁殖显示设置",
       "FloatingTextName": "显示头顶悬浮文字",
-      "FloatingTextDesc": "开启后显示生物头顶的性别、状态和成长进度等信息"
+      "FloatingTextDesc": "开启后显示生物头顶的性别、状态和成长进度等信息",
+      "FontScaleName": "悬浮文字字号",
+      "FontScaleDesc": "头顶悬浮文字的缩放倍数（0.5~3倍）",
+      "VerticalOffsetName": "悬浮文字上下偏移",
+      "VerticalOffsetDesc": "头顶悬浮文字整体上下移动（正=上移，负=下移），避免大模型遮挡文字",
+      
+      "ShowNameName": "显示名称",
+      "ShowNameDesc": "信息面板显示生物名称",
+      "ShowGenderName": "显示性别",
+      "ShowGenderDesc": "信息面板显示性别",
+      "ShowStageName": "显示成长阶段",
+      "ShowStageDesc": "信息面板显示成长阶段（幼崽/成年）",
+      "ShowStatusName": "显示繁殖状态",
+      "ShowStatusDesc": "信息面板显示繁殖状态（求偶/孕期/恢复等）",
+      "ShowGrowthName": "显示成长进度条",
+      "ShowGrowthDesc": "信息面板显示成长值百分比和成长进度条",
+      
+      "NuiEnabledName": "启用 Neorxna 面板注入",
+      "NuiEnabledDesc": "向 Neorxna 信息面板注入繁殖信息",
+      "NuiShowGenderName": "显示性别",
+      "NuiShowGenderDesc": "在 Neorxna 信息面板名称后追加性别",
+      "NuiShowStageName": "显示成长阶段",
+      "NuiShowStageDesc": "在 Neorxna 信息面板显示成长阶段",
+      "NuiShowStatusName": "显示繁殖状态",
+      "NuiShowStatusDesc": "在 Neorxna 信息面板显示繁殖状态",
+      "NuiShowGrowthName": "显示成长进度条",
+      "NuiShowGrowthDesc": "在 Neorxna 信息面板显示成长值和成长进度条"
     },
 
     "SpeciesDescription": {
