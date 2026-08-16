@@ -19,5 +19,4 @@ Quoted/*.dll
 # 打包产物
 *.scmod
 
-# Neorxna 相关（集成代码不入库）
 Breeding/NeorxnaBreedingNui.cs
