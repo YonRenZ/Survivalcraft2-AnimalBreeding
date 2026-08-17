@@ -73,6 +73,9 @@ namespace Game
         /// <summary>体型更新节流计数器(每 60 帧更新一次体型，避免每帧写 BoxSize)。</summary>
         static long s_debugFrameCounter;
 
+        /// <summary>产蛋计时器(实体→下次产蛋剩余秒数，仅 BlockEggLaying 物种的成年雌体需要)。</summary>
+        static readonly Dictionary<Entity, float> s_eggLayTimers = new();
+
         /// <summary>
         /// 是否显示头顶悬浮文字(由模组设置 modsettings.json 的 FloatingTextEnabled 控制，默认开启)。
         /// 在 OnProjectLoaded 时从 ModSettingsManager 读取初值，OnModSettingChanged 时热更新。
@@ -384,6 +387,7 @@ namespace Game
             //   2) backfill 情况1(旧数据)抢先于情况2(权威 XML 缓存)，恢复出错误性别。
             s_states.Clear();
             s_pendingReverts.Clear();
+            s_eggLayTimers.Clear();
             // 同时复位 s_initialized：否则下个会话加载阶段(OnProjectLoaded 之前)OnEntityAdd
             // 会因 s_initialized 残留 true 而抢先按 RollGender 注册状态，虽然会被 backfill 情况2
             // 覆盖，但违反"加载期 OnEntityAdd 跳过、全部交给 backfill"的设计意图。
@@ -911,15 +915,31 @@ namespace Game
             // 5. 仇恨范围 factor(幼崽/怀孕母狼=0，发情期×倍率)
             ApplyChaseRangeFactor(factors, state, species);
 
-            // 5b. 拦截原版下蛋行为(食火鸡/鸵鸟等配置了 BlockEggLaying 的物种)
-            // 仅公体拦截下蛋(母体可以正常产蛋，符合生物学)
-            if (species.BlockEggLaying && state.Gender == BreedingGender.Male)
+            // 5b. 蛋系统：拦截原版下蛋行为 + 繁殖系统接管产蛋(有精/无精)
+            if (species.BlockEggLaying)
             {
                 ComponentLayEggBehavior layEgg = entity.FindComponent<ComponentLayEggBehavior>();
                 if (layEgg != null)
                 {
-                    // 设为零可阻止下蛋行为激活，每帧刷新确保不会中途产蛋
+                    // 阻止原版下蛋行为激活(由繁殖系统接管)
                     layEgg.m_importanceLevel = 0f;
+                }
+                // 仅成年雌体由繁殖系统产蛋(公体/未成年不产蛋)
+                if (state.Gender == BreedingGender.Female && state.IsAdult)
+                {
+                    // 产蛋计时器
+                    if (!s_eggLayTimers.TryGetValue(entity, out float nextLay))
+                    {
+                        nextLay = s_random.Float(120f, 300f); // 2~5 分钟首次产蛋间隔
+                    }
+                    nextLay -= dt;
+                    if (nextLay <= 0f)
+                    {
+                        LayEgg(entity, state, species);
+                        // 重置计时器：产蛋间隔比原版略长(原版约 2~5 分钟，改为 5~8 分钟)
+                        nextLay = s_random.Float(300f, 480f);
+                    }
+                    s_eggLayTimers[entity] = nextLay;
                 }
             }
 
@@ -931,6 +951,58 @@ namespace Game
             else
             {
                 UpdateMale(entity, state, species);
+            }
+        }
+
+        // ==================== 蛋系统：繁殖系统接管产蛋 ====================
+
+        /// <summary>
+        /// 由繁殖系统产蛋(取代原版 ComponentLayEggBehavior)。
+        /// 根据雌体繁殖状态决定产出有精蛋(已交配/怀孕)或无精蛋(未交配)。
+        /// 公体和未成年雌体不产蛋(已在调用处拦截)。
+        /// </summary>
+        static void LayEgg(Entity entity, BreedingState state, SpeciesConfig species)
+        {
+            try
+            {
+                ComponentBody body = entity.FindComponent<ComponentBody>();
+                if (body == null) return;
+
+                // 获取蛋类型(原版 EggBlock 通过模板名匹配)
+                var eggBlock = BlocksManager.Blocks[118] as EggBlock;
+                EggBlock.EggType eggType = eggBlock?.GetEggTypeByCreatureTemplateName(state.TemplateName);
+                if (eggType == null) return;
+
+                // 受精判定：母体发情期且有精状态(已怀孕/在虚弱期前已交配)
+                // 也可用 IsInEstrus + (PregnancyRemainingSeconds>0 || MatingProximitySeconds>0) 判断
+                bool isFertilized = state.IsInEstrus && (state.PregnancyRemainingSeconds > 0f || state.MatingProximitySeconds > 0f);
+
+                // 构建蛋块数据
+                int data = EggBlock.SetEggType(0, eggType.EggTypeIndex);
+                data = EggBlock.SetIsLaid(data, isFertilized);
+                int eggValue = Terrain.MakeBlockValue(118, 0, data);
+
+                // 产蛋位置与速度(参考原版 ComponentLayEggBehavior)
+                Vector3 pos = 0.5f * (body.BoundingBox.Min + body.BoundingBox.Max);
+                Matrix matrix = body.Matrix;
+                Vector3 velocity = 3f * Vector3.Normalize(
+                    -matrix.Forward + 0.1f * matrix.Up + 0.2f * s_random.Float(-1f, 1f) * matrix.Right
+                );
+
+                // 获取子系统引用
+                SubsystemPickables pickables = s_project.FindSubsystem<SubsystemPickables>(true);
+                SubsystemAudio audio = s_project.FindSubsystem<SubsystemAudio>(true);
+
+                // 产蛋(作为可拾取物品)
+                pickables?.AddPickable(eggValue, 1, pos, velocity, null, entity);
+                audio?.PlaySound("Audio/EggLaid", 1f, s_random.Float(-0.1f, 0.1f), pos, 2f, true);
+
+                // 注册到蛋管理器(BreedingEggManager)
+                // 注：蛋在掉落状态，等它被放置成块后由 SubsystemBreedingEggBehavior 注册
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] 产蛋异常: " + e.Message);
             }
         }
 
