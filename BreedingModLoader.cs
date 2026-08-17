@@ -154,8 +154,11 @@ namespace Game
                 // 避免重复注册
                 if (project.FindSubsystem<SubsystemBreedingEggBehavior>() != null) return;
                 var eggBehavior = new SubsystemBreedingEggBehavior();
-                var dummyDict = new TemplatesDatabase.ValuesDictionary();
-                eggBehavior.Initialize(project, dummyDict); // Initialize 会设 m_project + 调 Load
+                // Initialize 会检查 valuesDictionary.DatabaseObject.Type，空字典没 DatabaseObject 会抛 NullRef。
+                // 手动设字段绕过：
+                eggBehavior.m_project = project;
+                eggBehavior.m_valuesDictionary = new TemplatesDatabase.ValuesDictionary();
+                eggBehavior.Load(eggBehavior.m_valuesDictionary);
                 project.m_subsystems.Add(eggBehavior);
                 Log.Information("[Breeding] 蛋交互子系统已注册");
             }
