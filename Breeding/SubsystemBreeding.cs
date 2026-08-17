@@ -975,9 +975,9 @@ namespace Game
             float adultScale = state.Gender == BreedingGender.Male ? species.AdultMaleBoxScale : species.AdultFemaleBoxScale;
             float scale = species.CubBoxScale + (adultScale - species.CubBoxScale) * progress;
 
-            // 碰撞盒
+            // 碰撞盒：只缩放水平(XZ)方向，高度(Y)保持原版不变，避免大型动物(犀牛/驼鹿等)无法通过1格高缝隙
             Vector3 orig = state.OriginalBoxSize.Value;
-            body.BoxSize = new Vector3(orig.X * scale, orig.Y * scale, orig.Z * scale);
+            body.BoxSize = new Vector3(orig.X * scale, orig.Y, orig.Z * scale);
 
             // 视觉模型缩放(修复幼崽体型不变的问题)
             ComponentModel model = entity.FindComponent<ComponentModel>();
