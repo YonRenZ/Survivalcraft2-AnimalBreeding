@@ -232,6 +232,7 @@
       "BlockInteractDuringCub": true,
       "ConsumeSaddleOnBlocked": false,
       "BlockEggLaying": true,
+      "IncubationNeedsFeeding": true,
       "RequireFeeding": true,
       "FeedItem": "PumpkinBlock",
       "FedDurationSeconds": 600.0
@@ -797,6 +798,7 @@
       "BlockInteractDuringCub": true,
       "ConsumeSaddleOnBlocked": false,
       "BlockEggLaying": true,
+      "IncubationNeedsFeeding": true,
       "RequireFeeding": false
     }
   }

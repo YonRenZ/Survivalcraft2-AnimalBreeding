@@ -395,6 +395,13 @@ namespace Game
         /// </summary>
         public bool BlockEggLaying { get; set; } = false;
 
+        /// <summary>
+        /// 孵化期间是否需要成体在附近喂食/守护(仅对 BlockEggLaying=true 的物种有效)。
+        /// true=仅当附近有同种成年雌体时孵化进度才推进(模拟母体孵化行为)。
+        /// 陆行禽(鸵鸟/食火鸡)建议开启。
+        /// </summary>
+        public bool IncubationNeedsFeeding { get; set; } = false;
+
         // ==================== 运行时(不序列化) ====================
 
         [JsonIgnore]

@@ -112,6 +112,18 @@ namespace Game
                 }
 
                 egg.IsIncubating = true;
+                // 如果物种需要孵化喂食，检查附近是否有同种成年雌体
+                bool needsFeeding = GetIncubationNeedsFeeding(egg.Species);
+                if (needsFeeding)
+                {
+                    // 搜索附近 8 格内是否有同种成年雌体
+                    if (!HasNearbyAdultFemale(terrain, pos.X, pos.Y, pos.Z, egg.Species))
+                    {
+                        // 无成体在附近，孵化进度减半(模拟无母体孵蛋)
+                        egg.IncubationProgress += dt / GetIncubationDuration(egg) * 0.5f;
+                        continue;
+                    }
+                }
                 egg.IncubationProgress += dt / GetIncubationDuration(egg);
                 if (egg.IncubationProgress >= 1f)
                 {
@@ -164,6 +176,41 @@ namespace Game
             if (egg.Species == "Ostrich" || egg.Species == "Cassowary")
                 return 2f * 1200f; // 陆行禽 2 天
             return 1.5f * 1200f;    // 飞禽 1.5 天
+        }
+
+        /// <summary>该物种是否需要母体在旁孵化(喂食/守护)</summary>
+        static bool GetIncubationNeedsFeeding(string species)
+        {
+            BreedingConfig cfg = BreedingConfig.Current;
+            if (cfg == null) return false;
+            SpeciesConfig sp = cfg.GetSpecies(species);
+            return sp != null && sp.IncubationNeedsFeeding;
+        }
+
+        /// <summary>检查附近是否有同种成年雌体(用于孵化喂食判定)</summary>
+        static bool HasNearbyAdultFemale(SubsystemTerrain terrain, int x, int y, int z, string species)
+        {
+            if (s_project == null) return false;
+            SubsystemBodies bodies = s_project.FindSubsystem<SubsystemBodies>(true);
+            if (bodies == null) return false;
+            Vector3 center = new Vector3(x + 0.5f, y + 0.5f, z + 0.5f);
+            float radius = 8f;
+            DynamicArray<ComponentBody> results = new();
+            bodies.FindBodiesAroundPoint(new Vector2(center.X, center.Z), radius, results);
+            for (int i = 0; i < results.Count; i++)
+            {
+                Entity e = results.Array[i].Entity;
+                if (e == null) continue;
+                BreedingState s = SubsystemBreeding.GetState(e);
+                if (s == null) continue;
+                if (s.TemplateName == species && s.Gender == BreedingGender.Female && s.IsAdult)
+                {
+                    Vector3 otherPos = results.Array[i].Position;
+                    if (Vector3.Distance(center, otherPos) <= radius)
+                        return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>孵化：生成幼崽并移除蛋</summary>
