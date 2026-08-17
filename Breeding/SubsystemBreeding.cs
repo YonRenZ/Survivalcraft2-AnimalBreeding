@@ -943,6 +943,48 @@ namespace Game
                 }
             }
 
+            // 5c. 公体蛋守卫：附近有同种有精蛋时提升攻击性(保护孵化中的蛋)
+            // 利用 ChaseRange Factor 机制(与 ApplyChaseRangeFactor 一致)
+            if (species.BlockEggLaying && state.Gender == BreedingGender.Male && state.IsAdult)
+            {
+                ComponentBody maleBody = entity.FindComponent<ComponentBody>();
+                if (maleBody != null)
+                {
+                    Vector3 malePos = maleBody.Position;
+                    const float guardRadius = 12f;
+                    bool hasEggNearby = false;
+                    // 遍历蛋管理器，检查是否有同种有精蛋在附近
+                    foreach (var kv in BreedingEggManager.AllEggs)
+                    {
+                        if (!kv.Value.Fertilized) continue;
+                        if (kv.Value.Species != state.TemplateName) continue;
+                        Vector3 eggPos = new Vector3(kv.Key.X + 0.5f, kv.Key.Y + 0.5f, kv.Key.Z + 0.5f);
+                        if (Vector3.Distance(malePos, eggPos) <= guardRadius)
+                        {
+                            hasEggNearby = true;
+                            break;
+                        }
+                    }
+                    if (hasEggNearby)
+                    {
+                        // 提升攻击性：通过 ChaseRange Factor 增加仇恨范围
+                        if (!factors.OtherFactors.TryGetValue("ChaseRange", out List<ComponentLevel.Factor> list))
+                        {
+                            list = new List<ComponentLevel.Factor>();
+                            factors.OtherFactors["ChaseRange"] = list;
+                        }
+                        float mult = species.EstrusChaseRangeMultiplier > 0 ? species.EstrusChaseRangeMultiplier : 1.5f;
+                        list.Add(new ComponentLevel.Factor
+                        {
+                            Name = "Breeding.Guard",
+                            Value = 2.0f * mult,
+                            FactorAdditionType = FactorAdditionType.Multiply,
+                            Description = "蛋守卫: 保护孵化蛋"
+                        });
+                    }
+                }
+            }
+
             // 6. 性别特定更新
             if (state.Gender == BreedingGender.Female)
             {

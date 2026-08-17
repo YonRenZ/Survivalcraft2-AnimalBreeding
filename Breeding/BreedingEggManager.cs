@@ -67,6 +67,9 @@ namespace Game
             return info;
         }
 
+        /// <summary>所有蛋(用于遍历)</summary>
+        public static IEnumerable<KeyValuePair<Point3, EggInfo>> AllEggs => s_eggs;
+
         /// <summary>世界加载时清空</summary>
         public static void Clear()
         {
