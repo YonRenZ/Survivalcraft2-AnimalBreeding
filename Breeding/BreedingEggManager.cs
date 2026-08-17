@@ -152,9 +152,11 @@ namespace Game
             // 陆行禽(鸵鸟/食火鸡)：沙子上孵化
             if (egg.Species == "Ostrich" || egg.Species == "Cassowary")
             {
-                // 检查是否为沙子类方块
                 return name.Contains("Sand") || name.Contains("Sandstone") || name == "GravelBlock";
             }
+
+            // 飞禽/水禽/其他：树叶上孵化（测试时无高度限制，方便观察）
+            return name.Contains("Leaves") || name.Contains("Leaf") || name.Contains("LeavesBlock");
 
             // 水禽(鸭子等)：树叶上孵化，需靠近水域(附近 10 格内有水)
             if (egg.Species.IndexOf("Duck", StringComparison.OrdinalIgnoreCase) >= 0
@@ -179,10 +181,8 @@ namespace Game
         /// <summary>获取孵化所需秒数</summary>
         static float GetIncubationDuration(EggInfo egg)
         {
-            // 1 游戏天 = 1200 秒
-            if (egg.Species == "Ostrich" || egg.Species == "Cassowary")
-                return 2f * 1200f; // 陆行禽 2 天
-            return 1.5f * 1200f;    // 飞禽 1.5 天
+            // 测试用：统一 0.5 游戏天 = 600 秒(10 分钟)，方便观察孵化
+            return 0.5f * 1200f;
         }
 
         /// <summary>检查蛋附近是否有水方块(水禽池塘孵化条件)</summary>

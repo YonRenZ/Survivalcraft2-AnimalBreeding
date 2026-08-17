@@ -930,14 +930,14 @@ namespace Game
                     // 产蛋计时器
                     if (!s_eggLayTimers.TryGetValue(entity, out float nextLay))
                     {
-                        nextLay = s_random.Float(120f, 300f); // 2~5 分钟首次产蛋间隔
+                        nextLay = s_random.Float(30f, 60f); // 测试用：30~60 秒首次产蛋
                     }
                     nextLay -= dt;
                     if (nextLay <= 0f)
                     {
                         LayEgg(entity, state, species);
-                        // 重置计时器：产蛋间隔比原版略长(原版约 2~5 分钟，改为 5~8 分钟)
-                        nextLay = s_random.Float(300f, 480f);
+                        // 测试用：间隔 60~120 秒便于观察产蛋
+                        nextLay = s_random.Float(60f, 120f);
                     }
                     s_eggLayTimers[entity] = nextLay;
                 }
