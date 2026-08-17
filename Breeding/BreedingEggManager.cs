@@ -156,12 +156,19 @@ namespace Game
                 return name.Contains("Sand") || name.Contains("Sandstone") || name == "GravelBlock";
             }
 
+            // 水禽(鸭子等)：树叶上孵化，需靠近水域(附近 10 格内有水)
+            if (egg.Species.IndexOf("Duck", StringComparison.OrdinalIgnoreCase) >= 0
+                || egg.Species.IndexOf("Goose", StringComparison.OrdinalIgnoreCase) >= 0
+                || egg.Species.IndexOf("Swan", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                if (!(name.Contains("Leaves") || name.Contains("Leaf"))) return false;
+                // 检查附近是否有水(以蛋为中心 10 格半径扫描)
+                return IsNearWater(terrain, x, y, z, 10);
+            }
+
             // 飞禽：树叶上孵化，且高度≥10 格
-            // 检查树叶类方块
             if (name.Contains("Leaves") || name.Contains("Leaf") || name.Contains("LeavesBlock"))
             {
-                // 检查高度（从地面到树叶≥10 格）
-                // 简单检查：如果 y 坐标 > 10 且下方是树叶/树干
                 return y > 10;
             }
 
@@ -176,6 +183,27 @@ namespace Game
             if (egg.Species == "Ostrich" || egg.Species == "Cassowary")
                 return 2f * 1200f; // 陆行禽 2 天
             return 1.5f * 1200f;    // 飞禽 1.5 天
+        }
+
+        /// <summary>检查蛋附近是否有水方块(水禽池塘孵化条件)</summary>
+        static bool IsNearWater(SubsystemTerrain terrain, int x, int y, int z, int radius)
+        {
+            for (int dx = -radius; dx <= radius; dx++)
+            {
+                for (int dz = -radius; dz <= radius; dz++)
+                {
+                    if (dx * dx + dz * dz > radius * radius) continue;
+                    // 检查 y 附近的水面
+                    int waterY = terrain.Terrain.GetTopHeight(x + dx, z + dz);
+                    if (waterY < 1) continue;
+                    int block = terrain.Terrain.GetCellValue(x + dx, waterY, z + dz);
+                    int contents = Terrain.ExtractContents(block);
+                    string name = BlocksManager.Blocks[contents]?.GetType().Name ?? "";
+                    if (name.Contains("Water") || contents == 18 || contents == 19) // WaterBlock or Water
+                        return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>该物种是否需要母体在旁孵化(喂食/守护)</summary>

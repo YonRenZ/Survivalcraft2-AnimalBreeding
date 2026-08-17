@@ -201,11 +201,24 @@
 |------|------|--------|------|
 | `BlockEggLaying` | bool | `false` | 是否阻止**公体**的原版下蛋行为。`true` 时公体不产蛋，母体正常下蛋。适用于食火鸡（`Cassowary`）、鸵鸟（`Ostrich`）。 |
 
-> **示例**（食火鸡/鸵鸟开启公体产蛋拦截）：
+> **示例**（食火鸡/鸵鸟开启公体产蛋拦截 + 孵化需母体在旁）：
 > ```json
-> "Cassowary": { "BlockEggLaying": true },
-> "Ostrich":   { "BlockEggLaying": true }
+> "Cassowary": { "BlockEggLaying": true, "IncubationNeedsFeeding": true },
+> "Ostrich":   { "BlockEggLaying": true, "IncubationNeedsFeeding": true }
 > ```
+
+### 孵化参数（蛋系统专用）
+
+控制繁殖系统接管产蛋后的孵化行为（仅 `BlockEggLaying: true` 时生效）。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `IncubationNeedsFeeding` | bool | `false` | 孵化期间是否需要成体在旁。`true`=仅当附近有同种成年雌体时孵化进度才正常推进，否则进度减半。陆行禽（鸵鸟/食火鸡）建议开启。 |
+
+> **孵化条件汇总**：
+> - 陆行禽（鸵鸟/食火鸡）：沙子上孵化，2 游戏天，需母体在旁
+> - 飞禽：树叶上孵化（≥10 格高），1.5 游戏天，无需母体
+> - 水禽（鸭子/鹅/天鹅）：树叶上孵化，需靠近水域（10 格内）
 
 ---
 
@@ -419,3 +432,4 @@
 | `FeedItem` | `Normalize` 解析 / `OnEatPickable` 匹配 | 喂食物品方块类名 |
 | `FedDurationSeconds` | `OnEatPickable` 喂食成功时 | 已喂食状态持续秒数 |
 | `BlockEggLaying` | `OnFactorsUpdate` 下蛋拦截 | 是否拦截公体原版下蛋行为 |
+| `IncubationNeedsFeeding` | `BreedingEggManager` 孵化推进 | 孵化是否需要母体在旁喂食/守护 |
