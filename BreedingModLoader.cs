@@ -93,11 +93,17 @@ namespace Game
 
             // 注册蛋交互子系统(放置/踩碎/挖掘)
             RegisterEggBehavior(project);
+
+            // 初始化蛋管理器
+            BreedingEggManager.Initialize(project);
         }
 
-                /// <summary>每帧：射线检测玩家准星指向的生物，更新信息面板。</summary>
+                /// <summary>每帧：射线检测玩家准星指向的生物，更新信息面板，推进蛋孵化。</summary>
         public void Update(float dt)
         {
+            // 推进蛋孵化(无论是否 Neorxna 模式)
+            BreedingEggManager.AdvanceIncubation(dt);
+
             // Neorxna 注入模式下，面板更新由 NeorxnaHUD.OnNIPBodyRaycast 驱动，这里无需自带射线。
             if (s_useNeorxnaNui || s_infoPanel == null) return;
 
