@@ -560,8 +560,8 @@
       "AdultAttackFactor": 1.1,
       "MaleAttackBonus": 1.4,
       "CubBoxScale": 0.5,
-      "AdultMaleBoxScale": 1.25,
-      "AdultFemaleBoxScale": 1.1,
+      "AdultMaleBoxScale": 1.0,
+      "AdultFemaleBoxScale": 1.0,
       "EstrusChaseRangeMultiplier": 1.5,
       "CubMaleProbability": 0.5,
       "RequireFeeding": false
