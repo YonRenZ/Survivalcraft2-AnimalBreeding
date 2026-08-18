@@ -181,8 +181,8 @@ namespace Game
         /// <summary>获取孵化所需秒数</summary>
         static float GetIncubationDuration(EggInfo egg)
         {
-            // 测试用：统一 0.5 游戏天 = 600 秒(10 分钟)，方便观察孵化
-            return 0.5f * 1200f;
+            // 测试用：统一 0.05 游戏天 = 60 秒(1 分钟)，方便观察孵化
+            return 60f;
         }
 
         /// <summary>检查蛋附近是否有水方块(水禽池塘孵化条件)</summary>
