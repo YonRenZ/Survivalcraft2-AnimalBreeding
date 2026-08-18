@@ -800,6 +800,69 @@
       "BlockEggLaying": true,
       "IncubationNeedsFeeding": true,
       "RequireFeeding": false
+    },
+
+    "Bird": {
+      "BreedingSeasons": [ "Spring", "Summer" ],
+      "CubDurationDays": 3,
+      "GestationSeconds": 1200.0,
+      "MatingRequiredProximitySeconds": 8.0,
+      "WeaknessSeconds": 600.0,
+      "RivalChaseTime": 15.0,
+      "MateRadius": 2.0,
+      "SeekRadius": 15.0,
+      "BirthSpawnOffset": 1.0,
+      "CubAttackFactor": 0.15,
+      "AdultAttackFactor": 0.3,
+      "MaleAttackBonus": 1.1,
+      "CubBoxScale": 0.5,
+      "AdultMaleBoxScale": 1.0,
+      "AdultFemaleBoxScale": 1.0,
+      "CubMaleProbability": 0.5,
+      "BlockEggLaying": true,
+      "RequireFeeding": false
+    },
+
+    "Duck": {
+      "BreedingSeasons": [ "Spring", "Summer" ],
+      "CubDurationDays": 3,
+      "GestationSeconds": 1200.0,
+      "MatingRequiredProximitySeconds": 8.0,
+      "WeaknessSeconds": 600.0,
+      "RivalChaseTime": 15.0,
+      "MateRadius": 2.0,
+      "SeekRadius": 15.0,
+      "BirthSpawnOffset": 1.0,
+      "CubAttackFactor": 0.15,
+      "AdultAttackFactor": 0.3,
+      "MaleAttackBonus": 1.1,
+      "CubBoxScale": 0.5,
+      "AdultMaleBoxScale": 1.0,
+      "AdultFemaleBoxScale": 1.0,
+      "CubMaleProbability": 0.5,
+      "BlockEggLaying": true,
+      "RequireFeeding": false
+    },
+
+    "Pigeon": {
+      "BreedingSeasons": [ "Spring", "Summer" ],
+      "CubDurationDays": 3,
+      "GestationSeconds": 1200.0,
+      "MatingRequiredProximitySeconds": 8.0,
+      "WeaknessSeconds": 600.0,
+      "RivalChaseTime": 15.0,
+      "MateRadius": 2.0,
+      "SeekRadius": 15.0,
+      "BirthSpawnOffset": 1.0,
+      "CubAttackFactor": 0.15,
+      "AdultAttackFactor": 0.3,
+      "MaleAttackBonus": 1.1,
+      "CubBoxScale": 0.5,
+      "AdultMaleBoxScale": 1.0,
+      "AdultFemaleBoxScale": 1.0,
+      "CubMaleProbability": 0.5,
+      "BlockEggLaying": true,
+      "RequireFeeding": false
     }
   }
 }
