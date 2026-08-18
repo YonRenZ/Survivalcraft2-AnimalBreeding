@@ -100,5 +100,9 @@
       "Zebra": "Zebra: herd herbivore, courts in spring, no feeding required, wary.",
       "Wildboar": "Wildboar: omnivorous medium animal, courts in autumn, no feeding required."
     }
+  },
+  "EggBlock": {
+    "5": "Cooked {0}",
+    "6": "Fertilized {0}"
   }
 }
