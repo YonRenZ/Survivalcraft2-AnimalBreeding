@@ -182,7 +182,7 @@
       "BlockInteractDuringCub": true,
       "ConsumeSaddleOnBlocked": false,
       "RequireFeeding": true,
-      "FeedItem": "TallGrassBlock",
+      "FeedItem": null,
       "FedDurationSeconds": 600.0
     },
     "Reindeer": {
