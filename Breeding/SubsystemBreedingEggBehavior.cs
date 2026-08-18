@@ -111,6 +111,15 @@ namespace Game
             newBlockValue = 0;
         }
 
+        // ==================== 拦截蛋投掷孵化(刷怪蛋改为仅放置，不投掷孵化) ====================
+
+        /// <summary>拦截蛋被投掷时的孵化行为，让蛋只能作为方块放置，不能投掷孵化</summary>
+        public override bool OnHitAsProjectile(CellFace? cellFace, ComponentBody componentBody, WorldItem worldItem)
+        {
+            // 返回 true = 已处理，阻止原版 SubsystemEggBlockBehavior 的投掷孵化逻辑
+            return true;
+        }
+
         // ==================== 移除时清理蛋管理器 ====================
 
         public override void OnBlockRemoved(int value, int newValue, int x, int y, int z)
