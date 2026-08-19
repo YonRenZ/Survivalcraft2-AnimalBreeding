@@ -89,20 +89,7 @@ namespace Game
                 }
 
                 Current = cfg;
-                // TEST MODE: 临时缩放到测试友好值，方便调试(正式版移除)
-                foreach (var sp in cfg.Species.Values)
-                {
-                    if (sp != null)
-                    {
-                        sp.GestationSeconds = 2f;
-                        sp.WeaknessSeconds = 2f;
-                        sp.MatingRequiredProximitySeconds = 1f;
-                        sp.CubDurationDays = 0.02f;
-                        sp.RivalChaseTime = 2f;
-                        sp.FedDurationSeconds = 60f;
-                    }
-                }
-                Log.Information($"[Breeding] 全部配置合并完成，总物种数={cfg.Species.Count}，Enabled={cfg.Enabled} (TEST MODE: 时间值已缩放)");
+                Log.Information($"[Breeding] 全部配置合并完成，总物种数={cfg.Species.Count}，Enabled={cfg.Enabled}");
                 return Current;
             }
             catch (Exception e)
@@ -407,13 +394,6 @@ namespace Game
         /// 繁殖系统接管后，这些生物改为直接分娩幼崽，不再丢蛋在地上。
         /// </summary>
         public bool BlockEggLaying { get; set; } = false;
-
-        /// <summary>
-        /// 孵化期间是否需要成体在附近喂食/守护(仅对 BlockEggLaying=true 的物种有效)。
-        /// true=仅当附近有同种成年雌体时孵化进度才推进(模拟母体孵化行为)。
-        /// 陆行禽(鸵鸟/食火鸡)建议开启。
-        /// </summary>
-        public bool IncubationNeedsFeeding { get; set; } = false;
 
         // ==================== 运行时(不序列化) ====================
 

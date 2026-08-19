@@ -90,20 +90,11 @@ namespace Game
                 // 未装 Neorxna 时不显示顶部信息面板，仅保留头顶悬浮文字
                 s_useNeorxnaNui = false;
             }
-
-            // 注册蛋交互子系统(放置/踩碎/挖掘)
-            RegisterEggBehavior(project);
-
-            // 初始化蛋管理器
-            BreedingEggManager.Initialize(project);
         }
 
-                /// <summary>每帧：射线检测玩家准星指向的生物，更新信息面板，推进蛋孵化。</summary>
+                /// <summary>每帧：射线检测玩家准星指向的生物，更新信息面板。</summary>
         public void Update(float dt)
         {
-            // 推进蛋孵化(无论是否 Neorxna 模式)
-            BreedingEggManager.AdvanceIncubation(dt);
-
             // Neorxna 注入模式下，面板更新由 NeorxnaHUD.OnNIPBodyRaycast 驱动，这里无需自带射线。
             if (s_useNeorxnaNui || s_infoPanel == null) return;
 
@@ -150,28 +141,6 @@ namespace Game
             // 设置变更：重读全部显示设置(悬浮文字/元素开关/NeorxnaUI)
             BreedingDisplaySettings.Load();
             SubsystemBreeding.FloatingTextEnabled = BreedingDisplaySettings.FloatingTextEnabled;
-        }
-
-        /// <summary>注册蛋交互子系统(蛋的放置/踩碎/挖掘)。</summary>
-        static void RegisterEggBehavior(Project project)
-        {
-            try
-            {
-                // 避免重复注册
-                if (project.FindSubsystem<SubsystemBreedingEggBehavior>() != null) return;
-                var eggBehavior = new SubsystemBreedingEggBehavior();
-                // Initialize 会检查 valuesDictionary.DatabaseObject.Type，空字典没 DatabaseObject 会抛 NullRef。
-                // 手动设字段绕过：
-                eggBehavior.m_project = project;
-                eggBehavior.m_valuesDictionary = new TemplatesDatabase.ValuesDictionary();
-                eggBehavior.Load(eggBehavior.m_valuesDictionary);
-                project.m_subsystems.Add(eggBehavior);
-                Log.Information("[Breeding] 蛋交互子系统已注册");
-            }
-            catch (Exception e)
-            {
-                Log.Warning("[Breeding] 注册蛋交互子系统失败: " + e.Message);
-            }
         }
 
         /// <summary>Project 卸载时清理静态缓存，避免跨世界残留。</summary>
