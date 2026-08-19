@@ -1242,6 +1242,73 @@ namespace Game
             return nearest;
         }
 
+        /// <summary>
+        /// 在初始位置周围搜索可站立的安全生成点(用于分娩幼崽)。
+        /// 多半径×多方向尝试：脚下有地面、身体 2 格内无固体方块、附近 1.2 格内无其他生物。
+        /// 全部失败则回退到初始位置(保持最高生成成功率，仅可能轻微重叠)。
+        /// </summary>
+        static Vector3 FindSpawnPosition(Vector3 center, float maxRadius)
+        {
+            try
+            {
+                SubsystemTerrain terrain = s_project.FindSubsystem<SubsystemTerrain>(true);
+                for (float r = 0.5f; r <= maxRadius; r += 0.4f)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        float angle = (i / 8f) * (float)Math.PI * 2f + s_random.Float(-0.25f, 0.25f);
+                        Vector3 cand = center + new Vector3((float)Math.Cos(angle) * r, 0f, (float)Math.Sin(angle) * r);
+                        if (IsSpawnPositionFree(terrain, cand))
+                        {
+                            return cand;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Warning("[Breeding] 搜索生成位置异常: " + e.Message);
+            }
+            return center;
+        }
+
+        /// <summary>检查候选位置是否可站立：脚下是固体、身体(脚下~脚下+2)无固体、附近 1.2 格无其他生物。</summary>
+        static bool IsSpawnPositionFree(SubsystemTerrain terrain, Vector3 pos)
+        {
+            int x = Terrain.ToCell(pos.X);
+            int y = Terrain.ToCell(pos.Y);
+            int z = Terrain.ToCell(pos.Z);
+
+            // 脚下必须有地面
+            int belowContents = Terrain.ExtractContents(terrain.Terrain.GetCellValue(x, y - 1, z));
+            Block belowBlock = BlocksManager.Blocks[belowContents];
+            if (belowBlock == null || !belowBlock.IsCollidable_(terrain.Terrain.GetCellValue(x, y - 1, z)))
+                return false;
+
+            // 身体占用的脚下~脚下+2 必须无固体
+            for (int dy = 0; dy < 3; dy++)
+            {
+                int bodyValue = terrain.Terrain.GetCellValue(x, y + dy, z);
+                int bodyContents = Terrain.ExtractContents(bodyValue);
+                Block bodyBlock = BlocksManager.Blocks[bodyContents];
+                if (bodyBlock != null && bodyBlock.IsCollidable_(bodyValue))
+                    return false;
+            }
+
+            // 附近不能太挤(避免与其他生物重叠挤压)
+            if (s_bodies != null)
+            {
+                DynamicArray<ComponentBody> results = new();
+                s_bodies.FindBodiesAroundPoint(new Vector2(pos.X, pos.Z), 1.2f, results);
+                for (int i = 0; i < results.Count; i++)
+                {
+                    if (Vector3.DistanceSquared(results.Array[i].Position, pos) < 1.2f * 1.2f)
+                        return false;
+                }
+            }
+            return true;
+        }
+
         // ==================== 分娩 ====================
 
         /// <summary>
@@ -1255,9 +1322,11 @@ namespace Game
             if (motherBody == null) return;
 
             Vector3 basePos = motherBody.Position;
-            float off = species.BirthSpawnOffset;
-            Vector3 offset = new(s_random.Float(-off, off), 0f, s_random.Float(-off, off));
-            Vector3 spawnPos = basePos + offset;
+
+            // 在母体周围搜索可站立的安全位置(避免幼崽卡墙/生成失败/被挤压)。
+            // 从近到远尝试多个半径×多个方向，找到脚下有地面、身体不卡墙、附近不拥挤的位置。
+            float off = Math.Max(species.BirthSpawnOffset, 1.5f);
+            Vector3 spawnPos = FindSpawnPosition(basePos, off);
 
             // 选择幼崽模板(优先级: CubTemplates权重表 > CubTemplateOverride > 沿用母体)
             // CubTemplates: 按权重随机选，如 Cow 配 {"Cow":1,"Bull":1} → 50%生Cow 50%生Bull
