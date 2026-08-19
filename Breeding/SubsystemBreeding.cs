@@ -1276,15 +1276,19 @@ namespace Game
             {
                 cubState.Stage = GrowthStage.Cub;
                 cubState.BirthDay = s_timeOfDay.Day;
+                // 幼崽性别/体型必须用【幼崽自己的物种配置】，而不是母体的。
+                // 例如母牛(CubMaleProbability=0.0)生公牛幼崽时，若沿用母体会得到"雌性公牛"——
+                // 正确做法：公牛幼崽按 Bull 的 CubMaleProbability=1.0 分配为雄性。
+                SpeciesConfig cubSpecies = BreedingConfig.Current?.GetSpecies(cubState.TemplateName) ?? species;
                 // 幼崽性别同样用新实体 Id 确定性分配：出生后无论经历多少次 Despawn/重进存档，性别都不变
-                cubState.Gender = RollGender(cub, species);
+                cubState.Gender = RollGender(cub, cubSpecies);
                 cubState.PregnancyRemainingSeconds = -1f;
                 cubState.PregnancyFatherId = 0;
                 cubState.MatingProximitySeconds = 0f;
                 cubState.WeaknessRemainingSeconds = -1f;
 
                 // 立即应用幼崽体型(成长度=0 → CubBoxScale)
-                ApplyBoxSizeByGrowth(cub, cubState, species, 0f);
+                ApplyBoxSizeByGrowth(cub, cubState, cubSpecies, 0f);
             }
             Log.Information($"[Breeding] 产仔成功: mother={motherState.TemplateName}#{mother.Id}, cub#{cub.Id}, cubTemplate={cubTemplate}, cubGender={(s_states.TryGetValue(cub, out var cs) ? cs.GetGenderDisplayName() : "?")}");
 

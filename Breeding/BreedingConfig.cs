@@ -89,7 +89,20 @@ namespace Game
                 }
 
                 Current = cfg;
-                Log.Information($"[Breeding] 全部配置合并完成，总物种数={cfg.Species.Count}，Enabled={cfg.Enabled}");
+                // TEST MODE: 临时缩放到测试友好值，方便调试(正式版移除)
+                foreach (var sp in cfg.Species.Values)
+                {
+                    if (sp != null)
+                    {
+                        sp.GestationSeconds = 1f;
+                        sp.WeaknessSeconds = 1f;
+                        sp.MatingRequiredProximitySeconds = 1f;
+                        sp.CubDurationDays = 0.01f;
+                        sp.RivalChaseTime = 1f;
+                        sp.FedDurationSeconds = 30f;
+                    }
+                }
+                Log.Information($"[Breeding] 全部配置合并完成，总物种数={cfg.Species.Count}，Enabled={cfg.Enabled} (TEST MODE: 时间值已缩放)");
                 return Current;
             }
             catch (Exception e)
